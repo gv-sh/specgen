@@ -1,6 +1,5 @@
 // controllers/parameterController.js
 const databaseService = require('../services/databaseService');
-const { v4: uuidv4 } = require('uuid');
 
 /**
  * Controller for parameter operations
@@ -96,7 +95,21 @@ const parameterController = {
         });
       }
       
+      // Check if parameter name already exists in this category
+      const existingParameters = await databaseService.getParametersByCategoryId(categoryId);
+      const parameterExists = existingParameters.some(param => 
+        param.name.toLowerCase() === name.toLowerCase()
+      );
+      
+      if (parameterExists) {
+        return res.status(400).json({
+          success: false,
+          error: `Parameter with name "${name}" already exists in this category`
+        });
+      }
+      
       // Validate values array for types that require it
+      let processedValues = values;
       if (['Dropdown', 'Radio Buttons', 'Checkbox'].includes(type)) {
         if (!values || !Array.isArray(values) || values.length < 1) {
           return res.status(400).json({
@@ -105,27 +118,33 @@ const parameterController = {
           });
         }
         
-        // Ensure each value has id and label
-        for (let i = 0; i < values.length; i++) {
-          if (!values[i].label) {
-            values[i] = {
-              id: `val-${uuidv4()}`,
-              label: values[i]
+        // Process values - use the label as the ID, after sanitizing
+        processedValues = values.map(value => {
+          if (typeof value === 'string') {
+            return {
+              id: value.replace(/\s+/g, '-').toLowerCase(),
+              label: value
             };
-          } else if (!values[i].id) {
-            values[i].id = `val-${uuidv4()}`;
+          } else if (value.label && !value.id) {
+            return {
+              id: value.label.replace(/\s+/g, '-').toLowerCase(),
+              label: value.label
+            };
           }
-        }
+          return value;
+        });
       }
       
-      // Create a new parameter
+      // Create a new parameter with the name as part of ID (for uniqueness)
+      const parameterId = `${categoryId}-${name.replace(/\s+/g, '-').toLowerCase()}`;
+      
       const newParameter = {
-        id: `param-${uuidv4()}`,
+        id: parameterId,
         name,
         type,
         visibility: visibility || 'Basic',
         categoryId,
-        values: values || [],
+        values: processedValues || [],
         config: config || {}
       };
       
@@ -160,8 +179,26 @@ const parameterController = {
         });
       }
       
+      // If name is changing, check if the new name already exists in the category
+      if (name && name !== existingParameter.name) {
+        const parametersInCategory = await databaseService.getParametersByCategoryId(
+          categoryId || existingParameter.categoryId
+        );
+        
+        const nameExists = parametersInCategory.some(param => 
+          param.id !== id && param.name.toLowerCase() === name.toLowerCase()
+        );
+        
+        if (nameExists) {
+          return res.status(400).json({
+            success: false,
+            error: `Parameter with name "${name}" already exists in this category`
+          });
+        }
+      }
+      
       // Validate categoryId if provided
-      if (categoryId) {
+      if (categoryId && categoryId !== existingParameter.categoryId) {
         const category = await databaseService.getCategoryById(categoryId);
         if (!category) {
           return res.status(404).json({
@@ -179,18 +216,28 @@ const parameterController = {
       if (categoryId) updateData.categoryId = categoryId;
       if (config) updateData.config = { ...existingParameter.config, ...config };
       
-      // Handle values array update
+      // Process values if provided
       if (values) {
-        // Ensure each value has id and label
-        const processedValues = values.map(value => {
-          if (typeof value === 'string' || !value.id) {
-            return {
-              id: `val-${uuidv4()}`,
-              label: typeof value === 'string' ? value : value.label
-            };
-          }
-          return value;
-        });
+        // Process values in the same way as for creation
+        let processedValues;
+        if (Array.isArray(values)) {
+          processedValues = values.map(value => {
+            if (typeof value === 'string') {
+              return {
+                id: value.replace(/\s+/g, '-').toLowerCase(),
+                label: value
+              };
+            } else if (value.label && !value.id) {
+              return {
+                id: value.label.replace(/\s+/g, '-').toLowerCase(),
+                label: value.label
+              };
+            }
+            return value;
+          });
+        } else {
+          processedValues = values;
+        }
         
         updateData.values = processedValues;
       }

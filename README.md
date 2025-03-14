@@ -49,15 +49,29 @@ After initializing the database with sample data, you can test the generate endp
 
 ```json
 {
-  "[sci-fi-category-id]": {
-    "[tech-level-param-id]": "Near Future",
-    "[alien-life-param-id]": true,
-    "[space-exploration-param-id]": 7
+  "science-fiction": {
+    "science-fiction-technology-level": "Near Future",
+    "science-fiction-alien-life": true,
+    "science-fiction-space-exploration-focus": 7
   }
 }
 ```
 
-The specific IDs will be printed to the console when you run `npm run init-db`.
+The specific IDs will be printed to the console when you run `npm run init-db`. You can also run:
+
+```bash
+npm run test-generate
+```
+
+to automatically test the generate endpoint with the first category and its parameters.
+
+### ID Generation
+
+In this application, we use name-based IDs instead of random UUIDs:
+
+- Category IDs are derived from their names by converting to lowercase and replacing spaces with hyphens
+- Parameter IDs are derived from their category ID + parameter name using the same transformation
+- This approach ensures that IDs are readable, meaningful, and unique as long as category and parameter names are unique
 
 ### API Endpoints
 
@@ -117,21 +131,21 @@ Categories and parameters are stored in a JSON file with the following structure
 {
   "categories": [
     {
-      "id": "cat-1",
-      "name": "Environmental Policy",
+      "id": "science-fiction",
+      "name": "Science Fiction",
       "visibility": "Show"
     }
   ],
   "parameters": [
     {
-      "id": "param-1",
-      "name": "Climate Focus",
+      "id": "science-fiction-technology-level",
+      "name": "Technology Level",
       "type": "Dropdown",
       "visibility": "Basic",
-      "categoryId": "cat-1",
+      "categoryId": "science-fiction",
       "values": [
-        {"id": "val-1", "label": "Value 1"},
-        {"id": "val-2", "label": "Value 2"}
+        {"id": "near-future", "label": "Near Future"},
+        {"id": "advanced", "label": "Advanced"}
       ]
     }
   ]

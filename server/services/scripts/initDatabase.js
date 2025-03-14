@@ -1,32 +1,37 @@
 // server/scripts/initDatabase.js
 const fs = require('fs-extra');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
 
 const DATABASE_PATH = path.join(__dirname, '../data/database.json');
 
-// Generate consistent IDs for reference
+// Convert name to a slug suitable for use as an ID
+function nameToId(name) {
+  return name.replace(/\s+/g, '-').toLowerCase();
+}
+
+// Category IDs based on their names
 const CATEGORIES = {
-  sciFi: `cat-${uuidv4()}`,
-  fantasy: `cat-${uuidv4()}`,
-  dystopian: `cat-${uuidv4()}`
+  sciFi: nameToId("Science Fiction"),
+  fantasy: nameToId("Fantasy"),
+  dystopian: nameToId("Dystopian Future")
 };
 
+// Parameter IDs based on category ID + name
 const PARAMETERS = {
   // Sci-Fi parameters
-  techLevel: `param-${uuidv4()}`,
-  alienLife: `param-${uuidv4()}`,
-  spaceExploration: `param-${uuidv4()}`,
+  techLevel: `${CATEGORIES.sciFi}-${nameToId("Technology Level")}`,
+  alienLife: `${CATEGORIES.sciFi}-${nameToId("Alien Life")}`,
+  spaceExploration: `${CATEGORIES.sciFi}-${nameToId("Space Exploration Focus")}`,
   
   // Fantasy parameters
-  magicSystem: `param-${uuidv4()}`,
-  creatures: `param-${uuidv4()}`,
-  setting: `param-${uuidv4()}`,
+  magicSystem: `${CATEGORIES.fantasy}-${nameToId("Magic System")}`,
+  creatures: `${CATEGORIES.fantasy}-${nameToId("Mythical Creatures")}`,
+  setting: `${CATEGORIES.fantasy}-${nameToId("Setting")}`,
   
   // Dystopian parameters
-  societyType: `param-${uuidv4()}`,
-  survivalDifficulty: `param-${uuidv4()}`,
-  hopeLevel: `param-${uuidv4()}`
+  societyType: `${CATEGORIES.dystopian}-${nameToId("Society Type")}`,
+  survivalDifficulty: `${CATEGORIES.dystopian}-${nameToId("Survival Difficulty")}`,
+  hopeLevel: `${CATEGORIES.dystopian}-${nameToId("Hope Level")}`
 };
 
 // Create sample database content
@@ -57,10 +62,10 @@ const databaseContent = {
       visibility: "Basic",
       categoryId: CATEGORIES.sciFi,
       values: [
-        { id: "tech-1", label: "Near Future" },
-        { id: "tech-2", label: "Advanced" },
-        { id: "tech-3", label: "Post-Singularity" },
-        { id: "tech-4", label: "Ancient Advanced Tech" }
+        { id: nameToId("Near Future"), label: "Near Future" },
+        { id: nameToId("Advanced"), label: "Advanced" },
+        { id: nameToId("Post-Singularity"), label: "Post-Singularity" },
+        { id: nameToId("Ancient Advanced Tech"), label: "Ancient Advanced Tech" }
       ],
       config: {}
     },
@@ -98,10 +103,10 @@ const databaseContent = {
       visibility: "Basic",
       categoryId: CATEGORIES.fantasy,
       values: [
-        { id: "magic-1", label: "Elemental" },
-        { id: "magic-2", label: "Divine" },
-        { id: "magic-3", label: "Wild" },
-        { id: "magic-4", label: "Forbidden" }
+        { id: nameToId("Elemental"), label: "Elemental" },
+        { id: nameToId("Divine"), label: "Divine" },
+        { id: nameToId("Wild"), label: "Wild" },
+        { id: nameToId("Forbidden"), label: "Forbidden" }
       ],
       config: {}
     },
@@ -112,11 +117,11 @@ const databaseContent = {
       visibility: "Basic",
       categoryId: CATEGORIES.fantasy,
       values: [
-        { id: "creature-1", label: "Dragons" },
-        { id: "creature-2", label: "Elves" },
-        { id: "creature-3", label: "Dwarves" },
-        { id: "creature-4", label: "Unicorns" },
-        { id: "creature-5", label: "Merfolk" }
+        { id: nameToId("Dragons"), label: "Dragons" },
+        { id: nameToId("Elves"), label: "Elves" },
+        { id: nameToId("Dwarves"), label: "Dwarves" },
+        { id: nameToId("Unicorns"), label: "Unicorns" },
+        { id: nameToId("Merfolk"), label: "Merfolk" }
       ],
       config: {}
     },
@@ -127,10 +132,10 @@ const databaseContent = {
       visibility: "Basic",
       categoryId: CATEGORIES.fantasy,
       values: [
-        { id: "setting-1", label: "Medieval Europe" },
-        { id: "setting-2", label: "Ancient Orient" },
-        { id: "setting-3", label: "Island Realm" },
-        { id: "setting-4", label: "Desert Kingdom" }
+        { id: nameToId("Medieval Europe"), label: "Medieval Europe" },
+        { id: nameToId("Ancient Orient"), label: "Ancient Orient" },
+        { id: nameToId("Island Realm"), label: "Island Realm" },
+        { id: nameToId("Desert Kingdom"), label: "Desert Kingdom" }
       ],
       config: {}
     },
@@ -143,10 +148,10 @@ const databaseContent = {
       visibility: "Basic",
       categoryId: CATEGORIES.dystopian,
       values: [
-        { id: "society-1", label: "Totalitarian Regime" },
-        { id: "society-2", label: "Post-Apocalyptic" },
-        { id: "society-3", label: "Corporate Controlled" },
-        { id: "society-4", label: "Technological Surveillance" }
+        { id: nameToId("Totalitarian Regime"), label: "Totalitarian Regime" },
+        { id: nameToId("Post-Apocalyptic"), label: "Post-Apocalyptic" },
+        { id: nameToId("Corporate Controlled"), label: "Corporate Controlled" },
+        { id: nameToId("Technological Surveillance"), label: "Technological Surveillance" }
       ],
       config: {}
     },
@@ -198,12 +203,12 @@ async function initializeDatabase() {
       }
     }, null, 2));
     
-    console.log('\nCategory IDs:');
+    console.log('\nCategory IDs (derived from names):');
     Object.entries(CATEGORIES).forEach(([name, id]) => {
       console.log(`${name}: ${id}`);
     });
     
-    console.log('\nParameter IDs:');
+    console.log('\nParameter IDs (derived from category + name):');
     Object.entries(PARAMETERS).forEach(([name, id]) => {
       console.log(`${name}: ${id}`);
     });

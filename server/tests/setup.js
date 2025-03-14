@@ -14,6 +14,11 @@ const request = supertest(app);
 const DATABASE_PATH = path.join(__dirname, '../data/database.json');
 const TEST_DATABASE_PATH = path.join(__dirname, '../data/test-database.json');
 
+// Convert name to a slug suitable for use as an ID
+function nameToId(name) {
+  return name.replace(/\s+/g, '-').toLowerCase();
+}
+
 // Initialize the database file with valid JSON if it doesn't exist
 const initDatabase = async () => {
   try {
@@ -41,8 +46,9 @@ const initDatabase = async () => {
 
 // Utility function to create a clean test category
 const createTestCategory = async () => {
+  const categoryName = "Test Category";
   const response = await request.post('/api/categories').send({
-    name: "Test Category",
+    name: categoryName,
     visibility: "Show"
   });
   
@@ -74,8 +80,8 @@ const createTestParameters = async (categoryId) => {
       visibility: "Basic",
       categoryId: categoryId,
       values: [
-        { id: "test-1", label: "Test 1" },
-        { id: "test-2", label: "Test 2" }
+        { label: "Test 1" },
+        { label: "Test 2" }
       ]
     });
 
@@ -132,5 +138,6 @@ module.exports = {
   createTestCategory,
   cleanDatabase,
   createTestParameters,
-  initDatabase
+  initDatabase,
+  nameToId
 };

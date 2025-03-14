@@ -1,6 +1,5 @@
 // controllers/categoryController.js
 const databaseService = require('../services/databaseService');
-const { v4: uuidv4 } = require('uuid');
 
 /**
  * Controller for category operations
@@ -69,9 +68,20 @@ const categoryController = {
         });
       }
       
-      // Create a new category with a unique ID
+      // Check if category name already exists
+      const existingCategories = await databaseService.getCategories();
+      const categoryExists = existingCategories.some(cat => cat.name.toLowerCase() === name.toLowerCase());
+      
+      if (categoryExists) {
+        return res.status(400).json({
+          success: false,
+          error: `Category with name "${name}" already exists`
+        });
+      }
+      
+      // Create a new category, using name as ID
       const newCategory = {
-        id: `cat-${uuidv4()}`,
+        id: name.replace(/\s+/g, '-').toLowerCase(),
         name,
         visibility: visibility || 'Show'
       };
@@ -106,19 +116,36 @@ const categoryController = {
         });
       }
       
+      // Check if category exists
+      const category = await databaseService.getCategoryById(id);
+      if (!category) {
+        return res.status(404).json({
+          success: false,
+          error: `Category with ID ${id} not found`
+        });
+      }
+      
+      // If name is changing, check if the new name already exists
+      if (name && name !== category.name) {
+        const existingCategories = await databaseService.getCategories();
+        const categoryExists = existingCategories.some(cat => 
+          cat.id !== id && cat.name.toLowerCase() === name.toLowerCase()
+        );
+        
+        if (categoryExists) {
+          return res.status(400).json({
+            success: false,
+            error: `Category with name "${name}" already exists`
+          });
+        }
+      }
+      
       // Prepare update object
       const updateData = {};
       if (name) updateData.name = name;
       if (visibility) updateData.visibility = visibility;
       
       const updatedCategory = await databaseService.updateCategory(id, updateData);
-      
-      if (!updatedCategory) {
-        return res.status(404).json({
-          success: false,
-          error: `Category with ID ${id} not found`
-        });
-      }
       
       res.status(200).json({
         success: true,
