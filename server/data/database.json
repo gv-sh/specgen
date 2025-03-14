@@ -1,59 +1,10 @@
 {
-  "categories": [],
-  "parameters": []
-}-0efb2b70-087a-4d50-9c0f-0e32f7634b0b",
-      "name": "Test Category",
-      "visibility": "Show"
-    },
+  "categories": [
     {
-      "id": "cat-35439af3-0d56-4019-962d-6b99d6bde3cb",
-      "name": "Test Category",
+      "id": "cat-a93a010f-0368-4dee-a6d2-b3e1d664dd39",
+      "name": "Science Fiction",
       "visibility": "Show"
     }
   ],
-  "parameters": [
-    {
-      "id": "param-765b1ad6-afb8-430a-b5d6-5cdd295ee7ce",
-      "name": "Test Dropdown",
-      "type": "Dropdown",
-      "visibility": "Basic",
-      "categoryId": "cat-0efb2b70-087a-4d50-9c0f-0e32f7634b0b",
-      "values": [
-        {
-          "id": "test-1",
-          "label": "Test 1"
-        },
-        {
-          "id": "test-2",
-          "label": "Test 2"
-        }
-      ],
-      "config": {}
-    },
-    {
-      "id": "param-427caf3e-84a5-4905-acc4-5344b1c0ab71",
-      "name": "Test Slider",
-      "type": "Slider",
-      "visibility": "Basic",
-      "categoryId": "cat-0efb2b70-087a-4d50-9c0f-0e32f7634b0b",
-      "values": [],
-      "config": {
-        "min": 0,
-        "max": 100,
-        "step": 1
-      }
-    },
-    {
-      "id": "param-4282fa91-7aba-4227-9b37-4dff396a0dff",
-      "name": "Test Toggle",
-      "type": "Toggle Switch",
-      "visibility": "Basic",
-      "categoryId": "cat-0efb2b70-087a-4d50-9c0f-0e32f7634b0b",
-      "values": {
-        "on": "Yes",
-        "off": "No"
-      },
-      "config": {}
-    }
-  ]
+  "parameters": []
 }
