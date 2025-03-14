@@ -1,5 +1,5 @@
 // tests/categories.test.js
-import { request, cleanDatabase, initDatabase } from './setup';
+const { request, cleanDatabase, initDatabase } = require('./setup');
 
 describe('Category API Tests', () => {
   // Clean database before all tests
