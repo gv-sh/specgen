@@ -1,8 +1,9 @@
 // services/databaseService.js
-const fs = require('fs').promises;
+const fsExtra = require('fs-extra');
 const path = require('path');
 
-const DATABASE_PATH = path.join(__dirname, '../data/database.json');
+// Use absolute path for database file
+const DATABASE_PATH = path.resolve(__dirname, '../data/database.json');
 
 /**
  * Service for handling JSON file database operations
@@ -14,15 +15,32 @@ class DatabaseService {
    */
   async getData() {
     try {
-      const data = await fs.readFile(DATABASE_PATH, 'utf8');
-      return JSON.parse(data);
-    } catch (error) {
-      if (error.code === 'ENOENT') {
+      console.log(`Reading database from: ${DATABASE_PATH}`);
+      // Check if file exists
+      const exists = await fsExtra.pathExists(DATABASE_PATH);
+      if (!exists) {
+        console.log('Database file does not exist, creating new one');
         // File doesn't exist, create a new one with empty categories and parameters
         const initialData = { categories: [], parameters: [] };
         await this.saveData(initialData);
         return initialData;
       }
+      
+      // Read the file with fs-extra for better error handling
+      const data = await fsExtra.readJson(DATABASE_PATH);
+      console.log(`Successfully read database with ${data.categories?.length || 0} categories and ${data.parameters?.length || 0} parameters`);
+      return data;
+    } catch (error) {
+      console.error('Error reading database:', error);
+      
+      // If the file is corrupted, create a new one
+      if (error.name === 'SyntaxError') {
+        console.log('Database file is corrupted, creating new one');
+        const initialData = { categories: [], parameters: [] };
+        await this.saveData(initialData);
+        return initialData;
+      }
+      
       throw error;
     }
   }
@@ -34,13 +52,21 @@ class DatabaseService {
    */
   async saveData(data) {
     try {
-      // Ensure the data directory exists
-      await fs.mkdir(path.dirname(DATABASE_PATH), { recursive: true });
+      console.log(`Saving data to: ${DATABASE_PATH}`);
       
-      // Write the data to the file
-      await fs.writeFile(DATABASE_PATH, JSON.stringify(data, null, 2), 'utf8');
+      // Ensure the data directory exists
+      await fsExtra.ensureDir(path.dirname(DATABASE_PATH));
+      
+      // Write the data to a temp file first
+      const tempPath = `${DATABASE_PATH}.temp`;
+      await fsExtra.writeJson(tempPath, data, { spaces: 2 });
+      
+      // Then rename the temp file to the actual file (atomic operation)
+      await fsExtra.move(tempPath, DATABASE_PATH, { overwrite: true });
+      
+      console.log('Database saved successfully');
     } catch (error) {
-      console.error('Error saving data:', error);
+      console.error('Error saving database:', error);
       throw error;
     }
   }
@@ -51,7 +77,7 @@ class DatabaseService {
    */
   async getCategories() {
     const data = await this.getData();
-    return data.categories;
+    return data.categories || [];
   }
 
   /**
@@ -61,7 +87,7 @@ class DatabaseService {
    */
   async getCategoryById(id) {
     const data = await this.getData();
-    return data.categories.find(category => category.id === id) || null;
+    return (data.categories || []).find(category => category.id === id) || null;
   }
 
   /**
@@ -71,6 +97,12 @@ class DatabaseService {
    */
   async createCategory(category) {
     const data = await this.getData();
+    
+    // Ensure categories array exists
+    if (!data.categories) {
+      data.categories = [];
+    }
+    
     data.categories.push(category);
     await this.saveData(data);
     return category;
@@ -84,6 +116,13 @@ class DatabaseService {
    */
   async updateCategory(id, updatedCategory) {
     const data = await this.getData();
+    
+    // Ensure categories array exists
+    if (!data.categories) {
+      data.categories = [];
+      return null;
+    }
+    
     const index = data.categories.findIndex(category => category.id === id);
     
     if (index === -1) return null;
@@ -100,6 +139,11 @@ class DatabaseService {
    */
   async deleteCategory(id) {
     const data = await this.getData();
+    
+    // Ensure categories and parameters arrays exist
+    if (!data.categories) data.categories = [];
+    if (!data.parameters) data.parameters = [];
+    
     const initialLength = data.categories.length;
     
     // Filter out the category to delete
@@ -118,7 +162,7 @@ class DatabaseService {
    */
   async getParameters() {
     const data = await this.getData();
-    return data.parameters;
+    return data.parameters || [];
   }
 
   /**
@@ -128,7 +172,7 @@ class DatabaseService {
    */
   async getParametersByCategoryId(categoryId) {
     const data = await this.getData();
-    return data.parameters.filter(parameter => parameter.categoryId === categoryId);
+    return (data.parameters || []).filter(parameter => parameter.categoryId === categoryId);
   }
 
   /**
@@ -138,7 +182,7 @@ class DatabaseService {
    */
   async getParameterById(id) {
     const data = await this.getData();
-    return data.parameters.find(parameter => parameter.id === id) || null;
+    return (data.parameters || []).find(parameter => parameter.id === id) || null;
   }
 
   /**
@@ -148,6 +192,12 @@ class DatabaseService {
    */
   async createParameter(parameter) {
     const data = await this.getData();
+    
+    // Ensure parameters array exists
+    if (!data.parameters) {
+      data.parameters = [];
+    }
+    
     data.parameters.push(parameter);
     await this.saveData(data);
     return parameter;
@@ -161,6 +211,13 @@ class DatabaseService {
    */
   async updateParameter(id, updatedParameter) {
     const data = await this.getData();
+    
+    // Ensure parameters array exists
+    if (!data.parameters) {
+      data.parameters = [];
+      return null;
+    }
+    
     const index = data.parameters.findIndex(parameter => parameter.id === id);
     
     if (index === -1) return null;
@@ -177,6 +234,13 @@ class DatabaseService {
    */
   async deleteParameter(id) {
     const data = await this.getData();
+    
+    // Ensure parameters array exists
+    if (!data.parameters) {
+      data.parameters = [];
+      return false;
+    }
+    
     const initialLength = data.parameters.length;
     
     // Filter out the parameter to delete
