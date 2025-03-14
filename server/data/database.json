@@ -6,7 +6,7 @@
       "visibility": "Show"
     },
     {
-      "id": "cat-79216e69-3cf6-4802-bbee-464cc2b20865",
+      "id": "cat-6cb87d5a-5126-4224-bbf5-2a98311712cc",
       "name": "Test Category",
       "visibility": "Show"
     }
@@ -56,46 +56,42 @@
       "config": {}
     },
     {
-      "id": "param-83145cfc-3391-4496-81ef-7bd7a61faf92",
-      "name": "Updated Character Type",
+      "id": "param-803f69bc-4b42-4e2d-b4cd-dedf26a03a2b",
+      "name": "Test Dropdown",
       "type": "Dropdown",
-      "visibility": "Advanced",
-      "categoryId": "cat-79216e69-3cf6-4802-bbee-464cc2b20865",
+      "visibility": "Basic",
+      "categoryId": "cat-6cb87d5a-5126-4224-bbf5-2a98311712cc",
       "values": [
         {
-          "id": "char-1",
-          "label": "Hero"
+          "id": "test-1",
+          "label": "Test 1"
         },
         {
-          "id": "char-2",
-          "label": "Villain"
-        },
-        {
-          "id": "char-3",
-          "label": "Sidekick"
+          "id": "test-2",
+          "label": "Test 2"
         }
       ],
       "config": {}
     },
     {
-      "id": "param-c18e8082-2466-4cc4-9e1f-9facf8afa0ce",
-      "name": "Story Length",
+      "id": "param-46c563e8-c41b-48af-91aa-17393456587a",
+      "name": "Test Slider",
       "type": "Slider",
       "visibility": "Basic",
-      "categoryId": "cat-79216e69-3cf6-4802-bbee-464cc2b20865",
+      "categoryId": "cat-6cb87d5a-5126-4224-bbf5-2a98311712cc",
       "values": [],
       "config": {
-        "min": 100,
-        "max": 10000,
-        "step": 100
+        "min": 0,
+        "max": 100,
+        "step": 1
       }
     },
     {
-      "id": "param-29e34908-417e-41c9-9497-f4fb90de65e1",
-      "name": "Happy Ending",
+      "id": "param-a5d6bf4d-24bd-4b36-84b0-dca9a7e42d50",
+      "name": "Test Toggle",
       "type": "Toggle Switch",
       "visibility": "Basic",
-      "categoryId": "cat-79216e69-3cf6-4802-bbee-464cc2b20865",
+      "categoryId": "cat-6cb87d5a-5126-4224-bbf5-2a98311712cc",
       "values": {
         "on": "Yes",
         "off": "No"
