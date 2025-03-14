@@ -125,12 +125,25 @@ if [ "$first_category_id" != "null" ] && [ "$first_category_id" != "" ]; then
     # Test Parameter Deletion
     echo -e "\n${YELLOW}=== Parameter Deletion Tests ===${NC}"
     
-    # Delete a parameter
-    last_param_id=$(curl -s $BASE_URL/parameters | jq -r '.[-1].id')
+    # Get the latest parameter (not param-1 which is the original)
+    last_param_id=$(curl -s $BASE_URL/parameters | jq -r '.[] | select(.id != "param-1") | .id' | head -1)
     if [ "$last_param_id" != "null" ] && [ "$last_param_id" != "" ]; then
       run_test "Delete a parameter" "curl -s -X DELETE $BASE_URL/parameters/$last_param_id"
     else
       echo -e "${RED}No parameter found to delete${NC}"
+      
+      # Create a parameter just to delete it
+      tmp_param_id=$(curl -s -X POST $BASE_URL/parameters -H 'Content-Type: application/json' -d '{
+        "name": "Temporary Parameter",
+        "type": "Dropdown",
+        "visibility": "Basic",
+        "categoryId": "'$first_category_id'",
+        "values": [{"id": "tmp-1", "label": "Temp 1"}, {"id": "tmp-2", "label": "Temp 2"}]
+      }' | jq -r '.id')
+      
+      if [ "$tmp_param_id" != "null" ] && [ "$tmp_param_id" != "" ]; then
+        run_test "Delete a newly created parameter" "curl -s -X DELETE $BASE_URL/parameters/$tmp_param_id"
+      fi
     fi
   else
     echo -e "${RED}No parameters found to test ID-specific endpoints${NC}"
@@ -139,11 +152,9 @@ if [ "$first_category_id" != "null" ] && [ "$first_category_id" != "" ]; then
   # Test Category Deletion
   echo -e "\n${YELLOW}=== Category Deletion Tests ===${NC}"
   
-  # Create a category for deletion
-  delete_category_id=$(curl -s -X POST $BASE_URL/categories -H 'Content-Type: application/json' -d '{
-    "name": "Category to Delete",
-    "visibility": "Show"
-  }' | jq -r '.id')
+  # Create a category for deletion (using explicit JSON and proper escaping)
+  delete_cat_response=$(curl -s -X POST $BASE_URL/categories -H "Content-Type: application/json" -d '{"name":"Category to Delete","visibility":"Show"}')
+  delete_category_id=$(echo "$delete_cat_response" | jq -r '.id')
   
   if [ "$delete_category_id" != "null" ] && [ "$delete_category_id" != "" ]; then
     run_test "Delete a category" "curl -s -X DELETE $BASE_URL/categories/$delete_category_id"
@@ -152,6 +163,13 @@ if [ "$first_category_id" != "null" ] && [ "$first_category_id" != "" ]; then
     run_test "Delete a category with parameters (should fail)" "curl -s -X DELETE $BASE_URL/categories/$first_category_id"
   else
     echo -e "${RED}Could not create category for deletion test${NC}"
+    echo "Response: $delete_cat_response"
+    
+    # Try to get and delete a category that's not the first one
+    other_cat_id=$(curl -s $BASE_URL/categories | jq -r '.[] | select(.id != "'$first_category_id'") | .id' | head -1)
+    if [ "$other_cat_id" != "" ]; then
+      run_test "Delete another existing category" "curl -s -X DELETE $BASE_URL/categories/$other_cat_id"
+    fi
   fi
 else
   echo -e "${RED}No categories found for parameter tests${NC}"

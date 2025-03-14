@@ -9,6 +9,11 @@
       "id": "cat-673909ee-e385-4bd5-91f2-82797755019a",
       "name": "Science Fiction",
       "visibility": "Show"
+    },
+    {
+      "id": "cat-9a9b29f6-778e-49c1-9c70-880d5a0be23a",
+      "name": "Science Fiction",
+      "visibility": "Show"
     }
   ],
   "parameters": [
@@ -100,6 +105,100 @@
     },
     {
       "id": "param-0f14e8b0-3918-4ab3-9bcd-c43cb7ff192f",
+      "name": "Story Elements",
+      "type": "Checkbox",
+      "visibility": "Basic",
+      "categoryId": "cat-1",
+      "values": [
+        {
+          "id": "elem-1",
+          "label": "Action"
+        },
+        {
+          "id": "elem-2",
+          "label": "Romance"
+        },
+        {
+          "id": "elem-3",
+          "label": "Mystery"
+        },
+        {
+          "id": "elem-4",
+          "label": "Horror"
+        }
+      ]
+    },
+    {
+      "id": "param-f729e3a9-8e00-4a7b-9cb9-a23485fb142d",
+      "name": "Technology Level",
+      "type": "Dropdown",
+      "visibility": "Basic",
+      "categoryId": "cat-1",
+      "values": [
+        {
+          "id": "tech-1",
+          "label": "Stone Age"
+        },
+        {
+          "id": "tech-2",
+          "label": "Industrial"
+        },
+        {
+          "id": "tech-3",
+          "label": "Information Age"
+        },
+        {
+          "id": "tech-4",
+          "label": "Space Age"
+        }
+      ]
+    },
+    {
+      "id": "param-83f6913d-0d71-4034-b875-4605f248ae5f",
+      "name": "Story Length",
+      "type": "Slider",
+      "visibility": "Basic",
+      "categoryId": "cat-1",
+      "values": {
+        "min": 100,
+        "max": 1000,
+        "step": 100
+      }
+    },
+    {
+      "id": "param-80bc5a75-0438-4c32-b6c0-db96176e676c",
+      "name": "Happy Ending",
+      "type": "Toggle",
+      "visibility": "Basic",
+      "categoryId": "cat-1",
+      "values": {
+        "on": "Yes",
+        "off": "No"
+      }
+    },
+    {
+      "id": "param-ac392cd1-11b5-49d9-bfeb-644c537dfd2e",
+      "name": "Main Character",
+      "type": "Radio",
+      "visibility": "Basic",
+      "categoryId": "cat-1",
+      "values": [
+        {
+          "id": "char-1",
+          "label": "Hero"
+        },
+        {
+          "id": "char-2",
+          "label": "Antihero"
+        },
+        {
+          "id": "char-3",
+          "label": "Villain"
+        }
+      ]
+    },
+    {
+      "id": "param-651aedad-38fd-4819-ab27-a228236b2172",
       "name": "Story Elements",
       "type": "Checkbox",
       "visibility": "Basic",

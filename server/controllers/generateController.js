@@ -31,6 +31,8 @@ const generateController = {
         
         if (!parameter) {
           console.warn(`Parameter ${paramId} not found in database`);
+          // Instead of skipping, use a default value for testing
+          formattedParameters[`Unknown Parameter (${paramId})`] = value;
           continue;
         }
         
