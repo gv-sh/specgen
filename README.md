@@ -28,10 +28,36 @@ The Express backend provides API endpoints for managing categories and parameter
    - Add your OpenAI API key: `OPENAI_API_KEY=your_key_here`
    - Set port if needed: `PORT=3001`
 
-3. Start the server:
+3. Initialize the database with sample data:
+   ```bash
+   npm run init-db
+   ```
+   This will create a database.json file with sample categories and parameters for Science Fiction, Fantasy, and Dystopian Future stories.
+
+4. Start the server:
    ```bash
    npm run dev
    ```
+
+5. Access the API documentation:
+   - Open a browser and go to: `http://localhost:3001/api-docs`
+   - You can test the API endpoints directly from the Swagger UI
+
+### Testing the Generate Endpoint
+
+After initializing the database with sample data, you can test the generate endpoint with a request like:
+
+```json
+{
+  "[sci-fi-category-id]": {
+    "[tech-level-param-id]": "Near Future",
+    "[alien-life-param-id]": true,
+    "[space-exploration-param-id]": 7
+  }
+}
+```
+
+The specific IDs will be printed to the console when you run `npm run init-db`.
 
 ### API Endpoints
 
@@ -51,6 +77,13 @@ The Express backend provides API endpoints for managing categories and parameter
 
 #### Generation
 - `POST /api/generate`: Send parameters to AI service
+
+### Testing
+
+Run tests (in sequence to avoid database corruption):
+```bash
+npm test
+```
 
 ## Admin Frontend
 

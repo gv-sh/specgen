@@ -5,43 +5,42 @@ const supertest = require('supertest');
 const databaseService = require('../services/databaseService');
 const fs = require('fs').promises;
 const path = require('path');
+const fsExtra = require('fs-extra');
 
 // Create a supertest instance with our app
 const request = supertest(app);
 
 // Database file path
 const DATABASE_PATH = path.join(__dirname, '../data/database.json');
+const TEST_DATABASE_PATH = path.join(__dirname, '../data/test-database.json');
 
 // Initialize the database file with valid JSON if it doesn't exist
 const initDatabase = async () => {
   try {
-    await fs.access(DATABASE_PATH);
-    // Try to read the file to see if it's valid JSON
-    const data = await fs.readFile(DATABASE_PATH, 'utf8');
-    try {
-      JSON.parse(data);
-      // File exists and is valid JSON
-    } catch (e) {
-      // File exists but is not valid JSON, initialize it
-      const initialData = { categories: [], parameters: [] };
-      await fs.writeFile(DATABASE_PATH, JSON.stringify(initialData, null, 2), 'utf8');
-    }
-  } catch (e) {
-    // File doesn't exist, create it
-    const initialData = { categories: [], parameters: [] };
-    
     // Make sure the directory exists
     await fs.mkdir(path.dirname(DATABASE_PATH), { recursive: true });
     
-    // Write initial data
-    await fs.writeFile(DATABASE_PATH, JSON.stringify(initialData, null, 2), 'utf8');
+    // Create a test database that's separate from the main database
+    const initialData = { 
+      categories: [], 
+      parameters: [] 
+    };
+    
+    // Write initial data with proper formatting
+    await fs.writeFile(TEST_DATABASE_PATH, JSON.stringify(initialData, null, 2), 'utf8');
+    
+    // Replace the actual database path with our test database during tests
+    // Use fs-extra to ensure atomic file operations
+    await fsExtra.copy(TEST_DATABASE_PATH, DATABASE_PATH);
+    
+  } catch (e) {
+    console.error('Error initializing test database:', e);
+    throw e;
   }
 };
 
 // Utility function to create a clean test category
 const createTestCategory = async () => {
-  await initDatabase();
-  
   const response = await request.post('/api/categories').send({
     name: "Test Category",
     visibility: "Show"
@@ -52,24 +51,17 @@ const createTestCategory = async () => {
 
 // Utility function to clean the database for testing
 const cleanDatabase = async () => {
-  await initDatabase();
+  // Create fresh test database
+  const initialData = { 
+    categories: [], 
+    parameters: [] 
+  };
   
-  const data = await databaseService.getData();
+  // Write initial data with proper formatting
+  await fsExtra.writeJson(TEST_DATABASE_PATH, initialData, { spaces: 2 });
+  await fsExtra.copy(TEST_DATABASE_PATH, DATABASE_PATH, { overwrite: true });
   
-  // Keep only the first category (if any)
-  if (data.categories.length > 0) {
-    const keepCategory = data.categories[0];
-    data.categories = [keepCategory];
-    
-    // Remove all parameters except those associated with the kept category
-    data.parameters = data.parameters.filter(param => param.categoryId === keepCategory.id);
-  } else {
-    data.categories = [];
-    data.parameters = [];
-  }
-  
-  await databaseService.saveData(data);
-  return data;
+  return initialData;
 };
 
 // Helper to create standard parameter types
@@ -112,12 +104,6 @@ const createTestParameters = async (categoryId) => {
       }
     });
 
-    // Log responses for debugging
-    console.log('Created parameters:');
-    console.log('Dropdown:', dropdownResponse.body);
-    console.log('Slider:', sliderResponse.body);
-    console.log('Toggle:', toggleResponse.body);
-
     return {
       dropdown: dropdownResponse.body.data || {},
       slider: sliderResponse.body.data || {},
@@ -128,6 +114,18 @@ const createTestParameters = async (categoryId) => {
     return { dropdown: {}, slider: {}, toggle: {} };
   }
 };
+
+// Make sure we use a clean database before each test
+beforeAll(async () => {
+  await initDatabase();
+  await cleanDatabase();
+});
+
+// Reset the database after all tests complete
+afterAll(async () => {
+  // Restore a clean state
+  await cleanDatabase();
+});
 
 module.exports = {
   request,

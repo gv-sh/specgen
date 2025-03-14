@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "jest --forceExit"
+    "test": "jest --forceExit --runInBand",
+    "init-db": "node scripts/initDatabase.js",
+    "test-generate": "node scripts/testGenerate.js"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +37,7 @@
       "^.+\\.js$": "babel-jest"
     },
     "testEnvironment": "node",
-    "testTimeout": 10000
+    "testTimeout": 10000,
+    "runInBand": true
   }
 }
