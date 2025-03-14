@@ -1,120 +1,174 @@
+// controllers/generateController.js
 const aiService = require('../services/aiService');
-const db = require('../services/databaseService');
+const databaseService = require('../services/databaseService');
 
 /**
- * Controller for fiction generation
+ * Controller for handling generation requests
  */
 const generateController = {
   /**
-   * Generate fiction based on parameters
+   * Generate content based on submitted parameters
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
    */
-  async generateFiction(req, res, next) {
+  async generate(req, res, next) {
     try {
-      const { selectedParameters } = req.body;
+      const parameters = req.body;
       
-      if (!selectedParameters || Object.keys(selectedParameters).length === 0) {
+      // Validate parameters
+      if (!parameters || Object.keys(parameters).length === 0) {
         return res.status(400).json({
-          error: "No parameters selected",
-          message: "Please select at least one parameter for generation"
+          success: false,
+          error: 'No parameters provided for generation'
         });
       }
       
-      // Format parameters for AI
-      const formattedParameters = {};
-      let validParametersFound = false;
-      
-      // Get all parameters from database
-      const allParameters = await db.getAll('parameters');
-      
-      // Process each selected parameter
-      for (const [paramId, value] of Object.entries(selectedParameters)) {
-        // Skip empty values
-        if (value === "" || value === null || value === undefined) {
-          console.warn(`Empty value for parameter ${paramId}, skipping`);
-          continue;
-        }
-        
-        // Find the parameter definition
-        const parameter = allParameters.find(p => p.id === paramId);
-        
-        if (!parameter) {
-          console.warn(`Parameter ${paramId} not found in database`);
-          // Include unknown parameters with their raw values
-          formattedParameters[`Unknown Parameter (${paramId})`] = typeof value === 'string' ? value : JSON.stringify(value);
-          validParametersFound = true;
-          continue;
-        }
-        
-        // Format value based on parameter type
-        let formattedValue;
-        
-        switch (parameter.type) {
-          case 'Dropdown':
-          case 'Radio':
-            // Find the label for the selected value
-            const selectedOption = parameter.values.find(v => v.id === value);
-            formattedValue = selectedOption ? selectedOption.label : value;
-            break;
-            
-          case 'Checkbox':
-            // Multiple values might be selected, format as list
-            if (Array.isArray(value)) {
-              const selectedLabels = value.map(v => {
-                const option = parameter.values.find(opt => opt.id === v);
-                return option ? option.label : v;
-              });
-              formattedValue = selectedLabels.join(', ');
-            } else {
-              // Handle case where a single value is passed instead of an array
-              const option = parameter.values.find(opt => opt.id === value);
-              formattedValue = option ? option.label : value;
-            }
-            break;
-            
-          case 'Slider':
-            // Slider value is just a number
-            formattedValue = value.toString();
-            break;
-            
-          case 'Toggle':
-            // Toggle is a boolean, get the appropriate label
-            const isTrue = value === true || value === "true" || value === 1 || value === "1";
-            formattedValue = isTrue ? parameter.values.on : parameter.values.off;
-            break;
-            
-          default:
-            formattedValue = String(value);
-        }
-        
-        // Add to formatted parameters
-        formattedParameters[parameter.name] = formattedValue;
-        validParametersFound = true;
-      }
-      
-      // If no valid parameters were processed, return an error
-      if (!validParametersFound) {
+      // Validate parameters against database
+      const validationResult = await validateParameters(parameters);
+      if (!validationResult.valid) {
         return res.status(400).json({
-          error: "No valid parameters provided",
-          message: "None of the provided parameters could be processed"
+          success: false,
+          error: `Invalid parameters: ${validationResult.message}`
         });
       }
       
-      // Generate fiction using AI service
-      const generatedFiction = await aiService.generateFiction(formattedParameters);
+      // Generate content using AI service
+      const result = await aiService.generateContent(parameters);
       
-      res.json({
-        fiction: generatedFiction,
-        parameters: formattedParameters
-      });
+      if (result.success) {
+        res.status(200).json({
+          success: true,
+          content: result.content,
+          metadata: result.metadata
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: result.error || 'Failed to generate content'
+        });
+      }
     } catch (error) {
-      console.error('Generation error:', error);
-      // Return a proper JSON error response instead of calling next()
-      res.status(500).json({
-        error: "Fiction generation failed",
-        message: error.message || "Unknown error occurred"
-      });
+      next(error);
     }
   }
 };
+
+/**
+ * Validate parameters against database
+ * @param {Object} parameters - Parameters to validate
+ * @returns {Object} - Validation result
+ */
+async function validateParameters(parameters) {
+  try {
+    // Get categories and parameters from database
+    const { categories, parameters: dbParameters } = await databaseService.getData();
+    
+    // Create lookup maps for faster validation
+    const categoryMap = new Map(categories.map(cat => [cat.id, cat]));
+    const parameterMap = new Map(dbParameters.map(param => [param.id, param]));
+    
+    // Check if parameters match expected structure
+    for (const [categoryName, categoryParams] of Object.entries(parameters)) {
+      // Find category by name
+      const category = categories.find(c => c.name === categoryName);
+      
+      if (!category) {
+        return { valid: false, message: `Category "${categoryName}" not found` };
+      }
+      
+      if (category.visibility !== 'Show') {
+        return { valid: false, message: `Category "${categoryName}" is not visible` };
+      }
+      
+      // Check each parameter in the category
+      for (const [paramName, paramValue] of Object.entries(categoryParams)) {
+        // Find parameter by name and category
+        const parameter = dbParameters.find(
+          p => p.name === paramName && p.categoryId === category.id
+        );
+        
+        if (!parameter) {
+          return { valid: false, message: `Parameter "${paramName}" not found in category "${categoryName}"` };
+        }
+        
+        if (parameter.visibility !== 'Basic' && parameter.visibility !== 'Advanced') {
+          return { valid: false, message: `Parameter "${paramName}" is not visible` };
+        }
+        
+        // Validate parameter value based on type
+        const validationError = validateParameterValue(parameter, paramValue);
+        if (validationError) {
+          return { valid: false, message: validationError };
+        }
+      }
+    }
+    
+    return { valid: true };
+  } catch (error) {
+    console.error('Error validating parameters:', error);
+    return { valid: false, message: 'Error validating parameters' };
+  }
+}
+
+/**
+ * Validate a parameter value based on its type
+ * @param {Object} parameter - Parameter definition
+ * @param {*} value - Value to validate
+ * @returns {String|null} - Error message or null if valid
+ */
+function validateParameterValue(parameter, value) {
+  switch (parameter.type) {
+    case 'Dropdown':
+      if (!parameter.values.some(v => v.label === value)) {
+        return `Value "${value}" is not valid for dropdown parameter "${parameter.name}"`;
+      }
+      break;
+      
+    case 'Slider':
+      const numValue = Number(value);
+      if (isNaN(numValue)) {
+        return `Value for slider parameter "${parameter.name}" must be a number`;
+      }
+      
+      const min = parameter.config?.min || 0;
+      const max = parameter.config?.max || 100;
+      
+      if (numValue < min || numValue > max) {
+        return `Value ${value} is outside the range [${min}-${max}] for slider parameter "${parameter.name}"`;
+      }
+      break;
+      
+    case 'Toggle Switch':
+      if (typeof value !== 'boolean') {
+        return `Value for toggle parameter "${parameter.name}" must be a boolean`;
+      }
+      break;
+      
+    case 'Radio Buttons':
+      if (!parameter.values.some(v => v.label === value)) {
+        return `Value "${value}" is not valid for radio parameter "${parameter.name}"`;
+      }
+      break;
+      
+    case 'Checkbox':
+      if (!Array.isArray(value)) {
+        return `Value for checkbox parameter "${parameter.name}" must be an array`;
+      }
+      
+      // Check if all selected values are valid
+      for (const item of value) {
+        if (!parameter.values.some(v => v.label === item)) {
+          return `Value "${item}" is not valid for checkbox parameter "${parameter.name}"`;
+        }
+      }
+      break;
+      
+    default:
+      return `Unknown parameter type: ${parameter.type}`;
+  }
+  
+  return null;
+}
 
 module.exports = generateController;

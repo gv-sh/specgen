@@ -1,56 +1,44 @@
+// services/aiService.js
 const axios = require('axios');
-require('dotenv').config();
 
 /**
- * Service for OpenAI API integration
+ * Service for interacting with OpenAI API
  */
 class AIService {
   constructor() {
     this.apiKey = process.env.OPENAI_API_KEY;
-    this.baseURL = 'https://api.openai.com/v1/chat/completions';
+    this.baseUrl = 'https://api.openai.com/v1/chat/completions';
+    
+    if (!this.apiKey) {
+      console.warn('WARNING: OPENAI_API_KEY not set in environment variables');
+    }
   }
 
   /**
-   * Generate speculative fiction based on parameters
+   * Generate content based on provided parameters
+   * @param {Object} parameters - User-selected parameters for generation
+   * @returns {Promise<Object>} - Generated content from OpenAI
    */
-  async generateFiction(parameters) {
+  async generateContent(parameters) {
     try {
-      // Handle case with empty parameters
-      if (!parameters || Object.keys(parameters).length === 0) {
-        return "No parameters provided for story generation.";
-      }
+      // Format parameters into a prompt
+      const prompt = this.formatPrompt(parameters);
       
-      // Format the parameters for the prompt
-      const formattedParams = Object.entries(parameters)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join('\n');
-
-      // Create the prompt for the AI
-      const prompt = `Generate a short speculative fiction story based on the following parameters:\n\n${formattedParams}`;
-
-      // Always use mock responses during testing for now
-      // This ensures tests pass without requiring a valid API key
-      console.log('Using mock response for testing.');
-      return `This is a mock speculative fiction story generated with the following parameters:\n\n${formattedParams}\n\nIn a world where technology and nature coexist in perfect harmony, a young explorer discovers an ancient artifact that changes everything they thought they knew about their civilization. As they navigate through the challenges and revelations, they must decide whether to share this knowledge with the world or keep it hidden.`;
-
-      /* Commented out actual API call until it's required:
-      // Make request to OpenAI API
+      // Call OpenAI API
       const response = await axios.post(
-        this.baseURL,
+        this.baseUrl,
         {
-          model: 'gpt-3.5-turbo',
+          model: "gpt-3.5-turbo",
           messages: [
             {
-              role: 'system',
-              content: 'You are a creative speculative fiction writer who specializes in creating engaging and thought-provoking stories.'
+              role: "system",
+              content: "You are a speculative fiction generator that creates content based on user parameters."
             },
             {
-              role: 'user',
+              role: "user",
               content: prompt
             }
-          ],
-          max_tokens: 1000,
-          temperature: 0.7
+          ]
         },
         {
           headers: {
@@ -59,18 +47,58 @@ class AIService {
           }
         }
       );
-
-      // Extract the generated text
-      return response.data.choices[0].message.content.trim();
-      */
+      
+      // Extract the generated content from response
+      return {
+        success: true,
+        content: response.data.choices[0].message.content,
+        metadata: {
+          model: response.data.model,
+          tokens: response.data.usage.total_tokens
+        }
+      };
     } catch (error) {
-      console.error('AI generation failed:', error);
-      
-      // Always return a valid story for testing purposes
-      const errorStory = `This is a mock fiction story generated due to an API error: ${error.message || 'Unknown error'}.\n\nParameters received: ${JSON.stringify(parameters, null, 2)}\n\nIn a world of endless possibilities, a brilliant scientist discovers a way to bridge realities. Their invention allows people to glimpse alternate versions of their lives, showing what might have been if different choices had been made. As the technology spreads, society begins to fragment as people become obsessed with lives they could have led. The scientist must decide whether to destroy their creation or find a way to help humanity embrace the reality they have.`;
-      
-      return errorStory;
+      console.error('Error calling OpenAI API:', error.response ? error.response.data : error.message);
+      return {
+        success: false,
+        error: error.response ? error.response.data.error.message : error.message
+      };
     }
+  }
+
+  /**
+   * Format user parameters into a prompt for OpenAI
+   * @param {Object} parameters - User-selected parameters
+   * @returns {String} - Formatted prompt
+   */
+  formatPrompt(parameters) {
+    let prompt = "Generate a speculative fiction story with the following elements:\n\n";
+    
+    // Add each category and its selected parameters to the prompt
+    Object.entries(parameters).forEach(([categoryName, categoryParams]) => {
+      prompt += `${categoryName}:\n`;
+      
+      // Add each parameter and its value
+      Object.entries(categoryParams).forEach(([paramName, paramValue]) => {
+        // Handle different parameter types
+        if (Array.isArray(paramValue)) {
+          // For multi-select parameters (checkboxes)
+          prompt += `- ${paramName}: ${paramValue.join(', ')}\n`;
+        } else if (typeof paramValue === 'boolean') {
+          // For toggle parameters
+          prompt += `- ${paramName}: ${paramValue ? 'Yes' : 'No'}\n`;
+        } else {
+          // For other parameter types (dropdown, radio, slider)
+          prompt += `- ${paramName}: ${paramValue}\n`;
+        }
+      });
+      
+      prompt += '\n';
+    });
+    
+    prompt += "Create a compelling and imaginative story that incorporates these elements. The story should be around 1000 words.";
+    
+    return prompt;
   }
 }
 

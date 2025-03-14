@@ -24,6 +24,11 @@
       "id": "cat-1bf1d236-4b17-42a5-9f3d-444a1c7495de",
       "name": "Test Category",
       "visibility": "Show"
+    },
+    {
+      "id": "cat-5c22c3ec-37ab-4bc1-8ad6-b7beac2fadbd",
+      "name": "Test Category",
+      "visibility": "Show"
     }
   ],
   "parameters": [

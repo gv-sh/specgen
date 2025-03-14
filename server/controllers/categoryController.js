@@ -1,5 +1,6 @@
+// controllers/categoryController.js
+const databaseService = require('../services/databaseService');
 const { v4: uuidv4 } = require('uuid');
-const db = require('../services/databaseService');
 
 /**
  * Controller for category operations
@@ -7,11 +8,17 @@ const db = require('../services/databaseService');
 const categoryController = {
   /**
    * Get all categories
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
    */
   async getAllCategories(req, res, next) {
     try {
-      const categories = await db.getAll('categories');
-      res.json(categories);
+      const categories = await databaseService.getCategories();
+      res.status(200).json({
+        success: true,
+        data: categories
+      });
     } catch (error) {
       next(error);
     }
@@ -19,19 +26,26 @@ const categoryController = {
 
   /**
    * Get a category by ID
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
    */
   async getCategoryById(req, res, next) {
     try {
       const { id } = req.params;
-      const category = await db.getById('categories', id);
+      const category = await databaseService.getCategoryById(id);
       
       if (!category) {
-        const error = new Error('Category not found');
-        error.statusCode = 404;
-        return next(error);
+        return res.status(404).json({
+          success: false,
+          error: `Category with ID ${id} not found`
+        });
       }
       
-      res.json(category);
+      res.status(200).json({
+        success: true,
+        data: category
+      });
     } catch (error) {
       next(error);
     }
@@ -39,29 +53,35 @@ const categoryController = {
 
   /**
    * Create a new category
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
    */
   async createCategory(req, res, next) {
     try {
       const { name, visibility } = req.body;
       
-      // Validate required fields
+      // Validate input
       if (!name) {
-        const error = new Error('Category name is required');
-        error.statusCode = 400;
-        return next(error);
+        return res.status(400).json({
+          success: false,
+          error: 'Name is required for a category'
+        });
       }
       
-      // Create category object
+      // Create a new category with a unique ID
       const newCategory = {
         id: `cat-${uuidv4()}`,
         name,
         visibility: visibility || 'Show'
       };
       
-      // Save to database
-      const createdCategory = await db.create('categories', newCategory);
+      const createdCategory = await databaseService.createCategory(newCategory);
       
-      res.status(201).json(createdCategory);
+      res.status(201).json({
+        success: true,
+        data: createdCategory
+      });
     } catch (error) {
       next(error);
     }
@@ -69,29 +89,41 @@ const categoryController = {
 
   /**
    * Update a category
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
    */
   async updateCategory(req, res, next) {
     try {
       const { id } = req.params;
       const { name, visibility } = req.body;
       
-      // Check if category exists
-      const existingCategory = await db.getById('categories', id);
-      if (!existingCategory) {
-        const error = new Error('Category not found');
-        error.statusCode = 404;
-        return next(error);
+      // Validate input
+      if (!name && !visibility) {
+        return res.status(400).json({
+          success: false,
+          error: 'At least one field (name or visibility) is required for update'
+        });
       }
       
-      // Update fields
-      const updates = {};
-      if (name !== undefined) updates.name = name;
-      if (visibility !== undefined) updates.visibility = visibility;
+      // Prepare update object
+      const updateData = {};
+      if (name) updateData.name = name;
+      if (visibility) updateData.visibility = visibility;
       
-      // Save to database
-      const updatedCategory = await db.update('categories', id, updates);
+      const updatedCategory = await databaseService.updateCategory(id, updateData);
       
-      res.json(updatedCategory);
+      if (!updatedCategory) {
+        return res.status(404).json({
+          success: false,
+          error: `Category with ID ${id} not found`
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: updatedCategory
+      });
     } catch (error) {
       next(error);
     }
@@ -99,33 +131,38 @@ const categoryController = {
 
   /**
    * Delete a category
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
    */
   async deleteCategory(req, res, next) {
     try {
       const { id } = req.params;
       
-      // Check if category exists
-      const existingCategory = await db.getById('categories', id);
-      if (!existingCategory) {
-        const error = new Error('Category not found');
-        error.statusCode = 404;
-        return next(error);
+      // Check if category exists before attempting to delete
+      const category = await databaseService.getCategoryById(id);
+      if (!category) {
+        return res.status(404).json({
+          success: false,
+          error: `Category with ID ${id} not found`
+        });
       }
       
-      // Check if category has parameters
-      const allParameters = await db.getAll('parameters');
-      const hasParameters = allParameters.some(param => param.categoryId === id);
+      // Get parameters associated with this category for proper error reporting
+      const parameters = await databaseService.getParametersByCategoryId(id);
       
-      if (hasParameters) {
-        const error = new Error('Cannot delete category with parameters. Delete parameters first.');
-        error.statusCode = 400;
-        return next(error);
-      }
+      // Perform the deletion (this will also delete associated parameters)
+      const deleted = await databaseService.deleteCategory(id);
       
-      // Delete from database
-      await db.delete('categories', id);
-      
-      res.json({ message: 'Category deleted successfully' });
+      res.status(200).json({
+        success: true,
+        message: `Category '${category.name}' deleted successfully`,
+        data: {
+          deletedCategory: category,
+          deletedParameters: parameters,
+          parameterCount: parameters.length
+        }
+      });
     } catch (error) {
       next(error);
     }

@@ -1,5 +1,6 @@
+// controllers/parameterController.js
+const databaseService = require('../services/databaseService');
 const { v4: uuidv4 } = require('uuid');
-const db = require('../services/databaseService');
 
 /**
  * Controller for parameter operations
@@ -7,20 +8,26 @@ const db = require('../services/databaseService');
 const parameterController = {
   /**
    * Get all parameters
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
    */
   async getAllParameters(req, res, next) {
     try {
-      // Get query parameters
+      // If categoryId query param is provided, filter by category
       const { categoryId } = req.query;
       
-      const parameters = await db.getAll('parameters');
+      let parameters;
+      if (categoryId) {
+        parameters = await databaseService.getParametersByCategoryId(categoryId);
+      } else {
+        parameters = await databaseService.getParameters();
+      }
       
-      // Filter by category if specified
-      const filteredParameters = categoryId
-        ? parameters.filter(param => param.categoryId === categoryId)
-        : parameters;
-      
-      res.json(filteredParameters);
+      res.status(200).json({
+        success: true,
+        data: parameters
+      });
     } catch (error) {
       next(error);
     }
@@ -28,19 +35,26 @@ const parameterController = {
 
   /**
    * Get a parameter by ID
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
    */
   async getParameterById(req, res, next) {
     try {
       const { id } = req.params;
-      const parameter = await db.getById('parameters', id);
+      const parameter = await databaseService.getParameterById(id);
       
       if (!parameter) {
-        const error = new Error('Parameter not found');
-        error.statusCode = 404;
-        return next(error);
+        return res.status(404).json({
+          success: false,
+          error: `Parameter with ID ${id} not found`
+        });
       }
       
-      res.json(parameter);
+      res.status(200).json({
+        success: true,
+        data: parameter
+      });
     } catch (error) {
       next(error);
     }
@@ -48,83 +62,79 @@ const parameterController = {
 
   /**
    * Create a new parameter
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
    */
   async createParameter(req, res, next) {
     try {
-      const { name, type, visibility, categoryId, values } = req.body;
+      const { name, type, visibility, categoryId, values, config } = req.body;
       
       // Validate required fields
-      if (!name) {
-        const error = new Error('Parameter name is required');
-        error.statusCode = 400;
-        return next(error);
+      if (!name || !type || !categoryId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Name, type, and categoryId are required for a parameter'
+        });
       }
       
-      if (!type || !['Dropdown', 'Slider', 'Toggle', 'Radio', 'Checkbox'].includes(type)) {
-        const error = new Error('Valid parameter type is required');
-        error.statusCode = 400;
-        return next(error);
+      // Validate parameter type
+      const validTypes = ['Dropdown', 'Slider', 'Toggle Switch', 'Radio Buttons', 'Checkbox'];
+      if (!validTypes.includes(type)) {
+        return res.status(400).json({
+          success: false,
+          error: `Invalid parameter type. Must be one of: ${validTypes.join(', ')}`
+        });
       }
       
-      if (!categoryId) {
-        const error = new Error('Category ID is required');
-        error.statusCode = 400;
-        return next(error);
-      }
-      
-      // Check if category exists
-      const category = await db.getById('categories', categoryId);
+      // Validate that the category exists
+      const category = await databaseService.getCategoryById(categoryId);
       if (!category) {
-        const error = new Error('Category not found');
-        error.statusCode = 404;
-        return next(error);
+        return res.status(404).json({
+          success: false,
+          error: `Category with ID ${categoryId} not found`
+        });
       }
       
-      // Create parameter object
+      // Validate values array for types that require it
+      if (['Dropdown', 'Radio Buttons', 'Checkbox'].includes(type)) {
+        if (!values || !Array.isArray(values) || values.length < 1) {
+          return res.status(400).json({
+            success: false,
+            error: `Values array is required for ${type} parameter type`
+          });
+        }
+        
+        // Ensure each value has id and label
+        for (let i = 0; i < values.length; i++) {
+          if (!values[i].label) {
+            values[i] = {
+              id: `val-${uuidv4()}`,
+              label: values[i]
+            };
+          } else if (!values[i].id) {
+            values[i].id = `val-${uuidv4()}`;
+          }
+        }
+      }
+      
+      // Create a new parameter
       const newParameter = {
         id: `param-${uuidv4()}`,
         name,
         type,
         visibility: visibility || 'Basic',
         categoryId,
-        values: values || []
+        values: values || [],
+        config: config || {}
       };
       
-      // Validate values based on type
-      switch (type) {
-        case 'Dropdown':
-        case 'Radio':
-        case 'Checkbox':
-          if (!values || !Array.isArray(values) || values.length < 2) {
-            const error = new Error(`${type} parameter requires at least 2 values as an array`);
-            error.statusCode = 400;
-            return next(error);
-          }
-          break;
-        case 'Slider':
-          if (!values || typeof values !== 'object' || values.min === undefined || values.max === undefined) {
-            const error = new Error('Slider parameter requires min and max values');
-            error.statusCode = 400;
-            return next(error);
-          }
-          // Ensure step has a default value if not provided
-          if (values.step === undefined) {
-            newParameter.values.step = 1;
-          }
-          break;
-        case 'Toggle':
-          if (!values || typeof values !== 'object' || !values.on || !values.off) {
-            const error = new Error('Toggle parameter requires on and off values');
-            error.statusCode = 400;
-            return next(error);
-          }
-          break;
-      }
+      const createdParameter = await databaseService.createParameter(newParameter);
       
-      // Save to database
-      const createdParameter = await db.create('parameters', newParameter);
-      
-      res.status(201).json(createdParameter);
+      res.status(201).json({
+        success: true,
+        data: createdParameter
+      });
     } catch (error) {
       next(error);
     }
@@ -132,78 +142,65 @@ const parameterController = {
 
   /**
    * Update a parameter
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
    */
   async updateParameter(req, res, next) {
     try {
       const { id } = req.params;
-      const { name, type, visibility, categoryId, values } = req.body;
+      const { name, type, visibility, categoryId, values, config } = req.body;
       
       // Check if parameter exists
-      const existingParameter = await db.getById('parameters', id);
+      const existingParameter = await databaseService.getParameterById(id);
       if (!existingParameter) {
-        const error = new Error('Parameter not found');
-        error.statusCode = 404;
-        return next(error);
+        return res.status(404).json({
+          success: false,
+          error: `Parameter with ID ${id} not found`
+        });
       }
       
-      // If changing category, check if category exists
-      if (categoryId && categoryId !== existingParameter.categoryId) {
-        const category = await db.getById('categories', categoryId);
+      // Validate categoryId if provided
+      if (categoryId) {
+        const category = await databaseService.getCategoryById(categoryId);
         if (!category) {
-          const error = new Error('Category not found');
-          error.statusCode = 404;
-          return next(error);
+          return res.status(404).json({
+            success: false,
+            error: `Category with ID ${categoryId} not found`
+          });
         }
       }
       
-      // Validate values based on type if type changed or values provided
-      const updatedType = type || existingParameter.type;
-      const updatedValues = values !== undefined ? values : existingParameter.values;
+      // Prepare update data
+      const updateData = {};
+      if (name) updateData.name = name;
+      if (type) updateData.type = type;
+      if (visibility) updateData.visibility = visibility;
+      if (categoryId) updateData.categoryId = categoryId;
+      if (config) updateData.config = { ...existingParameter.config, ...config };
       
-      if (type !== existingParameter.type || values !== undefined) {
-        switch (updatedType) {
-          case 'Dropdown':
-          case 'Radio':
-          case 'Checkbox':
-            if (!updatedValues || !Array.isArray(updatedValues) || updatedValues.length < 2) {
-              const error = new Error(`${updatedType} parameter requires at least 2 values as an array`);
-              error.statusCode = 400;
-              return next(error);
-            }
-            break;
-          case 'Slider':
-            if (!updatedValues || typeof updatedValues !== 'object' || updatedValues.min === undefined || updatedValues.max === undefined) {
-              const error = new Error('Slider parameter requires min and max values');
-              error.statusCode = 400;
-              return next(error);
-            }
-            // Ensure step has a default value if not provided
-            if (updatedValues.step === undefined && existingParameter.values.step === undefined) {
-              updatedValues.step = 1;
-            }
-            break;
-          case 'Toggle':
-            if (!updatedValues || typeof updatedValues !== 'object' || !updatedValues.on || !updatedValues.off) {
-              const error = new Error('Toggle parameter requires on and off values');
-              error.statusCode = 400;
-              return next(error);
-            }
-            break;
-        }
+      // Handle values array update
+      if (values) {
+        // Ensure each value has id and label
+        const processedValues = values.map(value => {
+          if (typeof value === 'string' || !value.id) {
+            return {
+              id: `val-${uuidv4()}`,
+              label: typeof value === 'string' ? value : value.label
+            };
+          }
+          return value;
+        });
+        
+        updateData.values = processedValues;
       }
       
-      // Update fields
-      const updates = {};
-      if (name !== undefined) updates.name = name;
-      if (type !== undefined) updates.type = type;
-      if (visibility !== undefined) updates.visibility = visibility;
-      if (categoryId !== undefined) updates.categoryId = categoryId;
-      if (values !== undefined) updates.values = updatedValues;
+      const updatedParameter = await databaseService.updateParameter(id, updateData);
       
-      // Save to database
-      const updatedParameter = await db.update('parameters', id, updates);
-      
-      res.json(updatedParameter);
+      res.status(200).json({
+        success: true,
+        data: updatedParameter
+      });
     } catch (error) {
       next(error);
     }
@@ -211,23 +208,33 @@ const parameterController = {
 
   /**
    * Delete a parameter
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
    */
   async deleteParameter(req, res, next) {
     try {
       const { id } = req.params;
       
-      // Check if parameter exists
-      const existingParameter = await db.getById('parameters', id);
-      if (!existingParameter) {
-        const error = new Error('Parameter not found');
-        error.statusCode = 404;
-        return next(error);
+      // Check if parameter exists before attempting to delete
+      const parameter = await databaseService.getParameterById(id);
+      if (!parameter) {
+        return res.status(404).json({
+          success: false,
+          error: `Parameter with ID ${id} not found`
+        });
       }
       
-      // Delete from database
-      await db.delete('parameters', id);
+      // Perform the deletion
+      const deleted = await databaseService.deleteParameter(id);
       
-      res.json({ message: 'Parameter deleted successfully' });
+      res.status(200).json({
+        success: true,
+        message: `Parameter '${parameter.name}' deleted successfully`,
+        data: {
+          deletedParameter: parameter
+        }
+      });
     } catch (error) {
       next(error);
     }
