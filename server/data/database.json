@@ -14,6 +14,11 @@
       "id": "cat-9a9b29f6-778e-49c1-9c70-880d5a0be23a",
       "name": "Science Fiction",
       "visibility": "Show"
+    },
+    {
+      "id": "cat-c6beb056-19e0-490a-a69d-f71ddcd05fc8",
+      "name": "Science Fiction",
+      "visibility": "Show"
     }
   ],
   "parameters": [
@@ -221,6 +226,54 @@
           "label": "Horror"
         }
       ]
+    },
+    {
+      "id": "param-fab9b957-3059-4344-a6af-42447eb5d90e",
+      "name": "Technology Level",
+      "type": "Dropdown",
+      "visibility": "Basic",
+      "categoryId": "cat-1",
+      "values": [
+        {
+          "id": "tech-1",
+          "label": "Stone Age"
+        },
+        {
+          "id": "tech-2",
+          "label": "Industrial"
+        },
+        {
+          "id": "tech-3",
+          "label": "Information Age"
+        },
+        {
+          "id": "tech-4",
+          "label": "Space Age"
+        }
+      ]
+    },
+    {
+      "id": "param-5230638c-8a1f-4c48-a4ff-b99017107a7f",
+      "name": "Story Length",
+      "type": "Slider",
+      "visibility": "Basic",
+      "categoryId": "cat-1",
+      "values": {
+        "min": 100,
+        "max": 1000,
+        "step": 100
+      }
+    },
+    {
+      "id": "param-7b0fd609-afc4-499d-8316-5586362cd78f",
+      "name": "Happy Ending",
+      "type": "Toggle",
+      "visibility": "Basic",
+      "categoryId": "cat-1",
+      "values": {
+        "on": "Yes",
+        "off": "No"
+      }
     }
   ]
 }

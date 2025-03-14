@@ -26,13 +26,19 @@ const generateController = {
       
       // Process each selected parameter
       for (const [paramId, value] of Object.entries(selectedParameters)) {
+        // Skip empty values
+        if (value === "" || value === null || value === undefined) {
+          console.warn(`Empty value for parameter ${paramId}, skipping`);
+          continue;
+        }
+        
         // Find the parameter definition
         const parameter = allParameters.find(p => p.id === paramId);
         
         if (!parameter) {
           console.warn(`Parameter ${paramId} not found in database`);
           // Instead of skipping, use a default value for testing
-          formattedParameters[`Unknown Parameter (${paramId})`] = value;
+          formattedParameters[`Unknown Parameter (${paramId})`] = typeof value === 'string' ? value : JSON.stringify(value);
           continue;
         }
         
@@ -69,7 +75,8 @@ const generateController = {
             
           case 'Toggle':
             // Toggle is a boolean, get the appropriate label
-            formattedValue = value === true || value === "true" ? parameter.values.on : parameter.values.off;
+            const isTrue = value === true || value === "true" || value === 1 || value === "1";
+            formattedValue = isTrue ? parameter.values.on : parameter.values.off;
             break;
             
           default:
@@ -80,6 +87,13 @@ const generateController = {
         formattedParameters[parameter.name] = formattedValue;
       }
       
+      // If no valid parameters were processed, return an error
+      if (Object.keys(formattedParameters).length === 0) {
+        const error = new Error('No valid parameters provided');
+        error.statusCode = 400;
+        return next(error);
+      }
+      
       // Generate fiction using AI service
       const generatedFiction = await aiService.generateFiction(formattedParameters);
       
@@ -88,6 +102,7 @@ const generateController = {
         parameters: formattedParameters
       });
     } catch (error) {
+      console.error('Generation error:', error);
       next(error);
     }
   }
