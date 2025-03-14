@@ -43,7 +43,7 @@ describe('Generation API Tests', () => {
   // Skip tests if setup failed
   const runTest = (name, testFn) => {
     test(name, async () => {
-      if (!category || !category.id || !parameters || !parameters.dropdown || !parameters.dropdown.name) {
+      if (!category || !category.id || !parameters || !parameters.dropdown || !parameters.dropdown.id) {
         console.warn(`Skipping test "${name}" due to missing test data`);
         return;
       }
@@ -54,8 +54,55 @@ describe('Generation API Tests', () => {
 
   runTest('POST /api/generate - Should generate content with dropdown parameter', async () => {
     const requestPayload = {
-      [category.name]: {
-        [parameters.dropdown.name]: "Test 1"
+      [category.id]: {
+        [parameters.dropdown.id]: "Test 1"
+      }
+    };
+
+    const response = await request.post('/api/generate').send(requestPayload);
+    
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('success', true);
+    expect(response.body).toHaveProperty('content');
+    expect(response.body).toHaveProperty('metadata');
+    expect(response.body.metadata).toHaveProperty('model');
+    expect(response.body.metadata).toHaveProperty('tokens');
+  });
+
+  runTest('POST /api/generate - Should generate content with slider parameter', async () => {
+    const requestPayload = {
+      [category.id]: {
+        [parameters.slider.id]: 50
+      }
+    };
+
+    const response = await request.post('/api/generate').send(requestPayload);
+    
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('success', true);
+    expect(response.body).toHaveProperty('content');
+  });
+
+  runTest('POST /api/generate - Should generate content with toggle parameter', async () => {
+    const requestPayload = {
+      [category.id]: {
+        [parameters.toggle.id]: true
+      }
+    };
+
+    const response = await request.post('/api/generate').send(requestPayload);
+    
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('success', true);
+    expect(response.body).toHaveProperty('content');
+  });
+
+  runTest('POST /api/generate - Should generate content with multiple parameters', async () => {
+    const requestPayload = {
+      [category.id]: {
+        [parameters.dropdown.id]: "Test 1",
+        [parameters.slider.id]: 75,
+        [parameters.toggle.id]: false
       }
     };
 
@@ -67,62 +114,52 @@ describe('Generation API Tests', () => {
     expect(response.body).toHaveProperty('metadata');
   });
 
-  runTest('POST /api/generate - Should generate content with slider parameter', async () => {
-    const requestPayload = {
-      [category.name]: {
-        [parameters.slider.name]: 50
-      }
-    };
-
-    const response = await request.post('/api/generate').send(requestPayload);
-    
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('success', true);
-  });
-
-  runTest('POST /api/generate - Should generate content with toggle parameter', async () => {
-    const requestPayload = {
-      [category.name]: {
-        [parameters.toggle.name]: true
-      }
-    };
-
-    const response = await request.post('/api/generate').send(requestPayload);
-    
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('success', true);
-  });
-
-  runTest('POST /api/generate - Should generate content with multiple parameters', async () => {
-    const requestPayload = {
-      [category.name]: {
-        [parameters.dropdown.name]: "Test 1",
-        [parameters.slider.name]: 75,
-        [parameters.toggle.name]: false
-      }
-    };
-
-    const response = await request.post('/api/generate').send(requestPayload);
-    
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('success', true);
-  });
-
-  test('POST /api/generate - Should validate required parameters', async () => {
+  test('POST /api/generate - Should require parameters', async () => {
     const response = await request.post('/api/generate').send({});
     
     expect(response.status).toBe(400);
     expect(response.body).toHaveProperty('success', false);
     expect(response.body).toHaveProperty('error');
+    expect(response.body.error).toContain('No parameters provided');
   });
 
-  // For parameter validation tests, we don't need to access the missing parameters
-  // so we can run these regardless of setup success
+  runTest('POST /api/generate - Should reject invalid category ID', async () => {
+    const requestPayload = {
+      ["invalid-category-id"]: {
+        [parameters.dropdown.id]: "Test 1"
+      }
+    };
+
+    const response = await request.post('/api/generate').send(requestPayload);
+    
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('success', false);
+    expect(response.body).toHaveProperty('error');
+    expect(response.body.error).toContain('Category');
+    expect(response.body.error).toContain('not found');
+  });
+
+  runTest('POST /api/generate - Should reject invalid parameter ID', async () => {
+    const requestPayload = {
+      [category.id]: {
+        ["invalid-param-id"]: "Test 1"
+      }
+    };
+
+    const response = await request.post('/api/generate').send(requestPayload);
+    
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('success', false);
+    expect(response.body).toHaveProperty('error');
+    expect(response.body.error).toContain('Parameter');
+    expect(response.body.error).toContain('not found');
+  });
+
   runTest('POST /api/generate - Should validate parameter values', async () => {
     // Invalid dropdown value
     const requestPayload = {
-      [category.name]: {
-        [parameters.dropdown.name]: "Invalid Value"
+      [category.id]: {
+        [parameters.dropdown.id]: "Invalid Value"
       }
     };
 
@@ -131,13 +168,19 @@ describe('Generation API Tests', () => {
     expect(response.status).toBe(400);
     expect(response.body).toHaveProperty('success', false);
     expect(response.body).toHaveProperty('error');
+    expect(response.body.error).toContain('not valid for dropdown parameter');
   });
 
   runTest('POST /api/generate - Should validate slider range', async () => {
+    // Create a slider with a specific range for testing
+    const sliderParam = parameters.slider;
+    const maxValue = sliderParam.config?.max || 100;
+    const outOfRangeValue = maxValue + 1000;
+    
     // Out of range slider value
     const requestPayload = {
-      [category.name]: {
-        [parameters.slider.name]: 999999
+      [category.id]: {
+        [sliderParam.id]: outOfRangeValue
       }
     };
 
@@ -146,13 +189,14 @@ describe('Generation API Tests', () => {
     expect(response.status).toBe(400);
     expect(response.body).toHaveProperty('success', false);
     expect(response.body).toHaveProperty('error');
+    expect(response.body.error).toContain('outside the range');
   });
 
   runTest('POST /api/generate - Should validate toggle value type', async () => {
     // Wrong type for toggle (string instead of boolean)
     const requestPayload = {
-      [category.name]: {
-        [parameters.toggle.name]: "Yes"
+      [category.id]: {
+        [parameters.toggle.id]: "Yes"
       }
     };
 
@@ -161,5 +205,6 @@ describe('Generation API Tests', () => {
     expect(response.status).toBe(400);
     expect(response.body).toHaveProperty('success', false);
     expect(response.body).toHaveProperty('error');
+    expect(response.body.error).toContain('must be a boolean');
   });
 });

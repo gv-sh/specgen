@@ -1,10 +1,92 @@
 {
   "categories": [
     {
-      "id": "cat-a93a010f-0368-4dee-a6d2-b3e1d664dd39",
-      "name": "Science Fiction",
+      "id": "cat-d63c3a35-da04-4470-8882-641015cd5db3",
+      "name": "Test Category",
+      "visibility": "Show"
+    },
+    {
+      "id": "cat-bc2b9148-fe1d-473f-8d78-50717eb55285",
+      "name": "Test Category",
+      "visibility": "Show"
+    },
+    {
+      "id": "cat-9976f19a-18ef-47b5-b12a-0d9bf91a98c5",
+      "name": "Test Category",
       "visibility": "Show"
     }
   ],
-  "parameters": []
+  "parameters": [
+    {
+      "id": "param-c1074f87-0e5c-40d1-905b-7cd0f4c4a97c",
+      "name": "Test Dropdown",
+      "type": "Dropdown",
+      "visibility": "Basic",
+      "categoryId": "cat-d63c3a35-da04-4470-8882-641015cd5db3",
+      "values": [
+        {
+          "id": "test-1",
+          "label": "Test 1"
+        },
+        {
+          "id": "test-2",
+          "label": "Test 2"
+        }
+      ],
+      "config": {}
+    },
+    {
+      "id": "param-13293191-75b3-4665-b75b-a8118844d942",
+      "name": "Test Slider",
+      "type": "Slider",
+      "visibility": "Basic",
+      "categoryId": "cat-d63c3a35-da04-4470-8882-641015cd5db3",
+      "values": [],
+      "config": {
+        "min": 0,
+        "max": 100,
+        "step": 1
+      }
+    },
+    {
+      "id": "param-ccce6dce-5e31-427e-b325-5e78f524006e",
+      "name": "Test Toggle",
+      "type": "Toggle Switch",
+      "visibility": "Basic",
+      "categoryId": "cat-d63c3a35-da04-4470-8882-641015cd5db3",
+      "values": {
+        "on": "Yes",
+        "off": "No"
+      },
+      "config": {}
+    },
+    {
+      "id": "param-e1c8b114-626f-4784-b6a3-b23c5a55cbcc",
+      "name": "Test Dropdown",
+      "type": "Dropdown",
+      "visibility": "Basic",
+      "categoryId": "cat-bc2b9148-fe1d-473f-8d78-50717eb55285",
+      "values": [
+        {
+          "id": "test-1",
+          "label": "Test 1"
+        },
+        {
+          "id": "test-2",
+          "label": "Test 2"
+        }
+      ],
+      "config": {}
+    }
+  ]
+}ity": "Basic",
+      "categoryId": "cat-bc2b9148-fe1d-473f-8d78-50717eb55285",
+      "values": [],
+      "config": {
+        "min": 0,
+        "max": 100,
+        "step": 1
+      }
+    }
+  ]
 }

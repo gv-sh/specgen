@@ -14,27 +14,97 @@ const generateController = {
    */
   async generate(req, res, next) {
     try {
-      const parameters = req.body;
+      const parameterSelections = req.body;
       
-      // Validate parameters
-      if (!parameters || Object.keys(parameters).length === 0) {
+      // Validate input
+      if (!parameterSelections || Object.keys(parameterSelections).length === 0) {
         return res.status(400).json({
           success: false,
           error: 'No parameters provided for generation'
         });
       }
       
-      // Validate parameters against database
-      const validationResult = await validateParameters(parameters);
-      if (!validationResult.valid) {
-        return res.status(400).json({
-          success: false,
-          error: `Invalid parameters: ${validationResult.message}`
-        });
+      // Get database data
+      const { categories, parameters } = await databaseService.getData();
+      
+      // Create parameter map for quick lookups
+      const parameterMap = new Map();
+      parameters.forEach(param => parameterMap.set(param.id, param));
+      
+      // Create category map for quick lookups
+      const categoryMap = new Map();
+      categories.forEach(cat => categoryMap.set(cat.id, cat));
+      
+      // Build a structured parameters object with names for the AI service
+      const formattedParameters = {};
+      
+      // Process each category of parameters
+      for (const [categoryId, categoryParams] of Object.entries(parameterSelections)) {
+        // Find the category by ID
+        const category = categoryMap.get(categoryId);
+        
+        if (!category) {
+          return res.status(400).json({
+            success: false,
+            error: `Category "${categoryId}" not found`
+          });
+        }
+        
+        // Skip hidden categories
+        if (category.visibility !== 'Show') {
+          return res.status(400).json({
+            success: false,
+            error: `Category "${category.name}" is not visible`
+          });
+        }
+        
+        // Initialize the category in our formatted parameters
+        formattedParameters[category.name] = {};
+        
+        // Process each parameter in this category
+        for (const [paramId, paramValue] of Object.entries(categoryParams)) {
+          // Find the parameter by ID
+          const parameter = parameterMap.get(paramId);
+          
+          if (!parameter) {
+            return res.status(400).json({
+              success: false,
+              error: `Parameter "${paramId}" not found`
+            });
+          }
+          
+          // Verify parameter belongs to the correct category
+          if (parameter.categoryId !== category.id) {
+            return res.status(400).json({
+              success: false,
+              error: `Parameter "${paramId}" does not belong to category "${category.name}"`
+            });
+          }
+          
+          // Skip hidden parameters
+          if (parameter.visibility !== 'Basic' && parameter.visibility !== 'Advanced') {
+            return res.status(400).json({
+              success: false,
+              error: `Parameter "${parameter.name}" is not visible`
+            });
+          }
+          
+          // Validate parameter value
+          const validationError = validateParameterValue(parameter, paramValue);
+          if (validationError) {
+            return res.status(400).json({
+              success: false,
+              error: validationError
+            });
+          }
+          
+          // Add parameter to formatted parameters with its name (not ID)
+          formattedParameters[category.name][parameter.name] = paramValue;
+        }
       }
       
       // Generate content using AI service
-      const result = await aiService.generateContent(parameters);
+      const result = await aiService.generateContent(formattedParameters);
       
       if (result.success) {
         res.status(200).json({
@@ -49,67 +119,11 @@ const generateController = {
         });
       }
     } catch (error) {
+      console.error('Error in generate controller:', error);
       next(error);
     }
   }
 };
-
-/**
- * Validate parameters against database
- * @param {Object} parameters - Parameters to validate
- * @returns {Object} - Validation result
- */
-async function validateParameters(parameters) {
-  try {
-    // Get categories and parameters from database
-    const { categories, parameters: dbParameters } = await databaseService.getData();
-    
-    // Create lookup maps for faster validation
-    const categoryMap = new Map(categories.map(cat => [cat.id, cat]));
-    const parameterMap = new Map(dbParameters.map(param => [param.id, param]));
-    
-    // Check if parameters match expected structure
-    for (const [categoryName, categoryParams] of Object.entries(parameters)) {
-      // Find category by name
-      const category = categories.find(c => c.name === categoryName);
-      
-      if (!category) {
-        return { valid: false, message: `Category "${categoryName}" not found` };
-      }
-      
-      if (category.visibility !== 'Show') {
-        return { valid: false, message: `Category "${categoryName}" is not visible` };
-      }
-      
-      // Check each parameter in the category
-      for (const [paramName, paramValue] of Object.entries(categoryParams)) {
-        // Find parameter by name and category
-        const parameter = dbParameters.find(
-          p => p.name === paramName && p.categoryId === category.id
-        );
-        
-        if (!parameter) {
-          return { valid: false, message: `Parameter "${paramName}" not found in category "${categoryName}"` };
-        }
-        
-        if (parameter.visibility !== 'Basic' && parameter.visibility !== 'Advanced') {
-          return { valid: false, message: `Parameter "${paramName}" is not visible` };
-        }
-        
-        // Validate parameter value based on type
-        const validationError = validateParameterValue(parameter, paramValue);
-        if (validationError) {
-          return { valid: false, message: validationError };
-        }
-      }
-    }
-    
-    return { valid: true };
-  } catch (error) {
-    console.error('Error validating parameters:', error);
-    return { valid: false, message: 'Error validating parameters' };
-  }
-}
 
 /**
  * Validate a parameter value based on its type
