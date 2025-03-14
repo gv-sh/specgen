@@ -1,166 +1,23 @@
 {
   "categories": [
     {
-      "id": "cat-1",
-      "name": "Updated Category Name",
-      "visibility": "Show"
-    },
-    {
-      "id": "cat-673909ee-e385-4bd5-91f2-82797755019a",
-      "name": "Science Fiction",
-      "visibility": "Show"
-    },
-    {
-      "id": "cat-9a9b29f6-778e-49c1-9c70-880d5a0be23a",
-      "name": "Science Fiction",
-      "visibility": "Show"
-    },
-    {
-      "id": "cat-c6beb056-19e0-490a-a69d-f71ddcd05fc8",
-      "name": "Science Fiction",
-      "visibility": "Show"
-    },
-    {
-      "id": "cat-1bf1d236-4b17-42a5-9f3d-444a1c7495de",
+      "id": "cat-27d3e09a-bb72-479a-b17d-de19d55755fe",
       "name": "Test Category",
       "visibility": "Show"
     },
     {
-      "id": "cat-5c22c3ec-37ab-4bc1-8ad6-b7beac2fadbd",
-      "name": "Test Category",
-      "visibility": "Show"
-    },
-    {
-      "id": "cat-f86fe6f3-4765-49ee-a444-154dc031443a",
-      "name": "Test Category",
-      "visibility": "Show"
-    },
-    {
-      "id": "cat-a8f19723-9a91-4853-ba37-bf0e3749a2de",
+      "id": "cat-79216e69-3cf6-4802-bbee-464cc2b20865",
       "name": "Test Category",
       "visibility": "Show"
     }
   ],
   "parameters": [
     {
-      "id": "param-651aedad-38fd-4819-ab27-a228236b2172",
-      "name": "Story Elements",
-      "type": "Checkbox",
-      "visibility": "Basic",
-      "categoryId": "cat-1",
-      "values": [
-        {
-          "id": "elem-1",
-          "label": "Action"
-        },
-        {
-          "id": "elem-2",
-          "label": "Romance"
-        },
-        {
-          "id": "elem-3",
-          "label": "Mystery"
-        },
-        {
-          "id": "elem-4",
-          "label": "Horror"
-        }
-      ]
-    },
-    {
-      "id": "param-fab9b957-3059-4344-a6af-42447eb5d90e",
-      "name": "Technology Level",
+      "id": "param-5161d51e-2aea-4f9a-86a9-b388bd27e7d2",
+      "name": "Test Dropdown",
       "type": "Dropdown",
       "visibility": "Basic",
-      "categoryId": "cat-1",
-      "values": [
-        {
-          "id": "tech-1",
-          "label": "Stone Age"
-        },
-        {
-          "id": "tech-2",
-          "label": "Industrial"
-        },
-        {
-          "id": "tech-3",
-          "label": "Information Age"
-        },
-        {
-          "id": "tech-4",
-          "label": "Space Age"
-        }
-      ]
-    },
-    {
-      "id": "param-5230638c-8a1f-4c48-a4ff-b99017107a7f",
-      "name": "Story Length",
-      "type": "Slider",
-      "visibility": "Basic",
-      "categoryId": "cat-1",
-      "values": {
-        "min": 100,
-        "max": 1000,
-        "step": 100
-      }
-    },
-    {
-      "id": "param-7b0fd609-afc4-499d-8316-5586362cd78f",
-      "name": "Happy Ending",
-      "type": "Toggle",
-      "visibility": "Basic",
-      "categoryId": "cat-1",
-      "values": {
-        "on": "Yes",
-        "off": "No"
-      }
-    },
-    {
-      "id": "param-bb529700-6b5f-4210-b0e4-53dbed8b7e2c",
-      "name": "Updated Parameter Name",
-      "type": "Dropdown",
-      "visibility": "Basic",
-      "categoryId": "cat-1",
-      "values": [
-        {
-          "id": "test-1",
-          "label": "Test 1"
-        },
-        {
-          "id": "test-2",
-          "label": "Test 2"
-        }
-      ]
-    },
-    {
-      "id": "param-981cec69-5a0a-42ba-aa4b-7cdc8681c75d",
-      "name": "Test Slider",
-      "type": "Slider",
-      "visibility": "Basic",
-      "categoryId": "cat-1",
-      "values": {
-        "min": 0,
-        "max": 100,
-        "step": 1
-      }
-    },
-    {
-      "id": "param-b2bf3b1e-748c-421b-8e5f-bdbe0b0cc9c8",
-      "name": "Test Toggle",
-      "type": "Toggle",
-      "visibility": "Basic",
-      "categoryId": "cat-1",
-      "values": {
-        "on": "Yes",
-        "off": "No"
-      }
-    },
-    {
-      "id": "param-cff4089b-e1d3-4cc2-9650-a847c62ef633",
-      "name": "Updated Parameter Name",
-      "type": "Dropdown",
-      "visibility": "Basic",
-      "categoryId": "cat-1",
+      "categoryId": "cat-27d3e09a-bb72-479a-b17d-de19d55755fe",
       "values": [
         {
           "id": "test-1",
@@ -174,11 +31,11 @@
       "config": {}
     },
     {
-      "id": "param-e3704795-34d8-40b5-b802-9e1827bab584",
+      "id": "param-58624e4b-799d-4b40-a08b-8c6baca847cb",
       "name": "Test Slider",
       "type": "Slider",
       "visibility": "Basic",
-      "categoryId": "cat-1",
+      "categoryId": "cat-27d3e09a-bb72-479a-b17d-de19d55755fe",
       "values": [],
       "config": {
         "min": 0,
@@ -187,11 +44,58 @@
       }
     },
     {
-      "id": "param-dcf5e5fd-84aa-4cbe-88d8-1015e0811313",
+      "id": "param-6fbd929b-2def-4683-871d-474bec452c8d",
       "name": "Test Toggle",
       "type": "Toggle Switch",
       "visibility": "Basic",
-      "categoryId": "cat-1",
+      "categoryId": "cat-27d3e09a-bb72-479a-b17d-de19d55755fe",
+      "values": {
+        "on": "Yes",
+        "off": "No"
+      },
+      "config": {}
+    },
+    {
+      "id": "param-83145cfc-3391-4496-81ef-7bd7a61faf92",
+      "name": "Updated Character Type",
+      "type": "Dropdown",
+      "visibility": "Advanced",
+      "categoryId": "cat-79216e69-3cf6-4802-bbee-464cc2b20865",
+      "values": [
+        {
+          "id": "char-1",
+          "label": "Hero"
+        },
+        {
+          "id": "char-2",
+          "label": "Villain"
+        },
+        {
+          "id": "char-3",
+          "label": "Sidekick"
+        }
+      ],
+      "config": {}
+    },
+    {
+      "id": "param-c18e8082-2466-4cc4-9e1f-9facf8afa0ce",
+      "name": "Story Length",
+      "type": "Slider",
+      "visibility": "Basic",
+      "categoryId": "cat-79216e69-3cf6-4802-bbee-464cc2b20865",
+      "values": [],
+      "config": {
+        "min": 100,
+        "max": 10000,
+        "step": 100
+      }
+    },
+    {
+      "id": "param-29e34908-417e-41c9-9497-f4fb90de65e1",
+      "name": "Happy Ending",
+      "type": "Toggle Switch",
+      "visibility": "Basic",
+      "categoryId": "cat-79216e69-3cf6-4802-bbee-464cc2b20865",
       "values": {
         "on": "Yes",
         "off": "No"
