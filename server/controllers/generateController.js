@@ -13,13 +13,15 @@ const generateController = {
       const { selectedParameters } = req.body;
       
       if (!selectedParameters || Object.keys(selectedParameters).length === 0) {
-        const error = new Error('No parameters selected');
-        error.statusCode = 400;
-        return next(error);
+        return res.status(400).json({
+          error: "No parameters selected",
+          message: "Please select at least one parameter for generation"
+        });
       }
       
       // Format parameters for AI
       const formattedParameters = {};
+      let validParametersFound = false;
       
       // Get all parameters from database
       const allParameters = await db.getAll('parameters');
@@ -37,8 +39,9 @@ const generateController = {
         
         if (!parameter) {
           console.warn(`Parameter ${paramId} not found in database`);
-          // Instead of skipping, use a default value for testing
+          // Include unknown parameters with their raw values
           formattedParameters[`Unknown Parameter (${paramId})`] = typeof value === 'string' ? value : JSON.stringify(value);
+          validParametersFound = true;
           continue;
         }
         
@@ -85,13 +88,15 @@ const generateController = {
         
         // Add to formatted parameters
         formattedParameters[parameter.name] = formattedValue;
+        validParametersFound = true;
       }
       
       // If no valid parameters were processed, return an error
-      if (Object.keys(formattedParameters).length === 0) {
-        const error = new Error('No valid parameters provided');
-        error.statusCode = 400;
-        return next(error);
+      if (!validParametersFound) {
+        return res.status(400).json({
+          error: "No valid parameters provided",
+          message: "None of the provided parameters could be processed"
+        });
       }
       
       // Generate fiction using AI service
@@ -103,7 +108,11 @@ const generateController = {
       });
     } catch (error) {
       console.error('Generation error:', error);
-      next(error);
+      // Return a proper JSON error response instead of calling next()
+      res.status(500).json({
+        error: "Fiction generation failed",
+        message: error.message || "Unknown error occurred"
+      });
     }
   }
 };
