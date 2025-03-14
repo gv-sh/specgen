@@ -1,4 +1,5 @@
 // tests/setup.js
+jest.mock('../swagger');
 const app = require('../index');
 const supertest = require('supertest');
 const databaseService = require('../services/databaseService');

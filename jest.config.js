@@ -1,12 +1,16 @@
 // jest.config.js
 module.exports = {
-    testEnvironment: 'node',
-    testTimeout: 100000,
-    testPathIgnorePatterns: ['/node_modules/'],
-    maxWorkers: '25%',
-    verbose: true,
-    collectCoverage: true,
-    coverageDirectory: './coverage',
-    coveragePathIgnorePatterns: ['/node_modules/', '/tests/'],
-    reporters: ['default']
-  };
+  testEnvironment: 'node',
+  testTimeout: 10000,
+  moduleFileExtensions: ['js', 'json'],
+  moduleDirectories: ['node_modules'],
+  transform: {
+    '^.+\\.js$': 'babel-jest'
+  },
+  transformIgnorePatterns: [
+    'node_modules/(?!(swagger-jsdoc|swagger-ui-express)/)'
+  ],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/$1'
+  }
+};
