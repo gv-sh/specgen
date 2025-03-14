@@ -1,0 +1,28 @@
+{
+  "categories": [
+    {
+      "id": "cat-1",
+      "name": "Updated Environmental Policy",
+      "visibility": "Show"
+    }
+  ],
+  "parameters": [
+    {
+      "id": "param-1",
+      "name": "Climate Focus",
+      "type": "Dropdown",
+      "visibility": "Basic",
+      "categoryId": "cat-1",
+      "values": [
+        {
+          "id": "val-1",
+          "label": "Value 1"
+        },
+        {
+          "id": "val-2",
+          "label": "Value 2"
+        }
+      ]
+    }
+  ]
+}
