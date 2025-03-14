@@ -29,6 +29,11 @@
       "id": "cat-5c22c3ec-37ab-4bc1-8ad6-b7beac2fadbd",
       "name": "Test Category",
       "visibility": "Show"
+    },
+    {
+      "id": "cat-f86fe6f3-4765-49ee-a444-154dc031443a",
+      "name": "Test Category",
+      "visibility": "Show"
     }
   ],
   "parameters": [
@@ -324,6 +329,49 @@
         "on": "Yes",
         "off": "No"
       }
+    },
+    {
+      "id": "param-cff4089b-e1d3-4cc2-9650-a847c62ef633",
+      "name": "Updated Parameter Name",
+      "type": "Dropdown",
+      "visibility": "Basic",
+      "categoryId": "cat-1",
+      "values": [
+        {
+          "id": "test-1",
+          "label": "Test 1"
+        },
+        {
+          "id": "test-2",
+          "label": "Test 2"
+        }
+      ],
+      "config": {}
+    },
+    {
+      "id": "param-e3704795-34d8-40b5-b802-9e1827bab584",
+      "name": "Test Slider",
+      "type": "Slider",
+      "visibility": "Basic",
+      "categoryId": "cat-1",
+      "values": [],
+      "config": {
+        "min": 0,
+        "max": 100,
+        "step": 1
+      }
+    },
+    {
+      "id": "param-dcf5e5fd-84aa-4cbe-88d8-1015e0811313",
+      "name": "Test Toggle",
+      "type": "Toggle Switch",
+      "visibility": "Basic",
+      "categoryId": "cat-1",
+      "values": {
+        "on": "Yes",
+        "off": "No"
+      },
+      "config": {}
     }
   ]
 }

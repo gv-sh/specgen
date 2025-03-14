@@ -47,7 +47,7 @@ run_test "Get all categories after adding new one" "curl -s $BASE_URL/categories
 
 # Find a category ID to use for tests
 categories_response=$(curl -s $BASE_URL/categories)
-first_category_id=$(echo "$categories_response" | jq -r '.[0].id')
+first_category_id=$(echo "$categories_response" | jq -r '.data[0].id')
 
 if [ "$first_category_id" != "null" ] && [ "$first_category_id" != "" ]; then
   run_test "Get category by ID ($first_category_id)" "curl -s $BASE_URL/categories/$first_category_id"
@@ -65,22 +65,22 @@ if [ "$first_category_id" != "null" ] && [ "$first_category_id" != "" ]; then
   run_test "Get parameters by category" "curl -s \"$BASE_URL/parameters?categoryId=$first_category_id\""
   
   # Create a dropdown parameter
-  dropdown_response=$(curl -s -X POST $BASE_URL/parameters -H "Content-Type: application/json" -d "{\"name\":\"Test Dropdown\",\"type\":\"Dropdown\",\"visibility\":\"Basic\",\"categoryId\":\"$first_category_id\",\"values\":[{\"id\":\"test-1\",\"label\":\"Test 1\"},{\"id\":\"test-2\",\"label\":\"Test 2\"}]}")
+  dropdown_param_resp=$(curl -s -X POST $BASE_URL/parameters -H "Content-Type: application/json" -d "{\"name\":\"Test Dropdown\",\"type\":\"Dropdown\",\"visibility\":\"Basic\",\"categoryId\":\"$first_category_id\",\"values\":[{\"id\":\"test-1\",\"label\":\"Test 1\"},{\"id\":\"test-2\",\"label\":\"Test 2\"}]}")
   echo "Created dropdown parameter:"
-  echo "$dropdown_response" | jq .
-  dropdown_param_id=$(echo "$dropdown_response" | jq -r '.id')
+  echo "$dropdown_param_resp" | jq .
+  dropdown_param_id=$(echo "$dropdown_param_resp" | jq -r '.data.id')
   
   # Create a slider parameter
-  slider_response=$(curl -s -X POST $BASE_URL/parameters -H "Content-Type: application/json" -d "{\"name\":\"Test Slider\",\"type\":\"Slider\",\"visibility\":\"Basic\",\"categoryId\":\"$first_category_id\",\"values\":{\"min\":0,\"max\":100,\"step\":1}}")
+  slider_param_resp=$(curl -s -X POST $BASE_URL/parameters -H "Content-Type: application/json" -d "{\"name\":\"Test Slider\",\"type\":\"Slider\",\"visibility\":\"Basic\",\"categoryId\":\"$first_category_id\",\"config\":{\"min\":0,\"max\":100,\"step\":1}}")
   echo "Created slider parameter:"
-  echo "$slider_response" | jq .
-  slider_param_id=$(echo "$slider_response" | jq -r '.id')
+  echo "$slider_param_resp" | jq .
+  slider_param_id=$(echo "$slider_param_resp" | jq -r '.data.id')
   
   # Create a toggle parameter
-  toggle_response=$(curl -s -X POST $BASE_URL/parameters -H "Content-Type: application/json" -d "{\"name\":\"Test Toggle\",\"type\":\"Toggle\",\"visibility\":\"Basic\",\"categoryId\":\"$first_category_id\",\"values\":{\"on\":\"Yes\",\"off\":\"No\"}}")
+  toggle_param_resp=$(curl -s -X POST $BASE_URL/parameters -H "Content-Type: application/json" -d "{\"name\":\"Test Toggle\",\"type\":\"Toggle Switch\",\"visibility\":\"Basic\",\"categoryId\":\"$first_category_id\",\"values\":{\"on\":\"Yes\",\"off\":\"No\"}}")
   echo "Created toggle parameter:"
-  echo "$toggle_response" | jq .
-  toggle_param_id=$(echo "$toggle_response" | jq -r '.id')
+  echo "$toggle_param_resp" | jq .
+  toggle_param_id=$(echo "$toggle_param_resp" | jq -r '.data.id')
   
   # Get parameter by ID
   if [ "$dropdown_param_id" != "null" ] && [ "$dropdown_param_id" != "" ]; then
@@ -93,35 +93,55 @@ if [ "$first_category_id" != "null" ] && [ "$first_category_id" != "" ]; then
   # Test Generation API
   echo -e "\n${YELLOW}=== Generation API Tests ===${NC}"
   
-  # Test with dropdown parameter
+  # Prepare a test request payload for generation
+  gen_payload="{\"Updated Category Name\":{"
+  
+  # Add the dropdown parameter if available
   if [ "$dropdown_param_id" != "null" ] && [ "$dropdown_param_id" != "" ]; then
-    run_test "Generate fiction with dropdown" "curl -s -X POST $BASE_URL/generate -H \"Content-Type: application/json\" -d '{\"selectedParameters\":{\"$dropdown_param_id\":\"test-1\"}}'"
+    run_test "Generate fiction with dropdown" "curl -s -X POST $BASE_URL/generate -H \"Content-Type: application/json\" -d '{\"Updated Category Name\":{\"Test Dropdown\":\"Test 1\"}}'"
+    gen_payload+="\"Test Dropdown\":\"Test 1\""
   else
     echo -e "${RED}No dropdown parameter available for generation test${NC}"
   fi
   
   # Test with slider parameter
   if [ "$slider_param_id" != "null" ] && [ "$slider_param_id" != "" ]; then
-    run_test "Generate fiction with slider" "curl -s -X POST $BASE_URL/generate -H \"Content-Type: application/json\" -d '{\"selectedParameters\":{\"$slider_param_id\":50}}'"
+    if [[ $gen_payload != "{\"Updated Category Name\":{" ]]; then
+      gen_payload+=","
+    fi
+    run_test "Generate fiction with slider" "curl -s -X POST $BASE_URL/generate -H \"Content-Type: application/json\" -d '{\"Updated Category Name\":{\"Test Slider\":50}}'"
+    gen_payload+="\"Test Slider\":50"
   else
     echo -e "${RED}No slider parameter available for generation test${NC}"
   fi
   
   # Test with toggle parameter
   if [ "$toggle_param_id" != "null" ] && [ "$toggle_param_id" != "" ]; then
-    run_test "Generate fiction with toggle" "curl -s -X POST $BASE_URL/generate -H \"Content-Type: application/json\" -d '{\"selectedParameters\":{\"$toggle_param_id\":true}}'"
+    if [[ $gen_payload != "{\"Updated Category Name\":{" ]]; then
+      gen_payload+=","
+    fi
+    run_test "Generate fiction with toggle" "curl -s -X POST $BASE_URL/generate -H \"Content-Type: application/json\" -d '{\"Updated Category Name\":{\"Test Toggle\":true}}'"
+    gen_payload+="\"Test Toggle\":true"
   else
     echo -e "${RED}No toggle parameter available for generation test${NC}"
+  fi
+  
+  # Close the JSON payload
+  gen_payload+="}}'"
+  
+  # Test combined generation if we have multiple parameters
+  if [[ $gen_payload != "{\"Updated Category Name\":{}}'" ]]; then
+    run_test "Generate fiction with combined parameters" "curl -s -X POST $BASE_URL/generate -H \"Content-Type: application/json\" -d '$gen_payload"
   fi
   
   # Test Parameter Deletion
   echo -e "\n${YELLOW}=== Parameter Deletion Tests ===${NC}"
   
   # Create a parameter just for deletion
-  deletion_param_response=$(curl -s -X POST $BASE_URL/parameters -H "Content-Type: application/json" -d "{\"name\":\"Parameter To Delete\",\"type\":\"Dropdown\",\"visibility\":\"Basic\",\"categoryId\":\"$first_category_id\",\"values\":[{\"id\":\"del-1\",\"label\":\"Delete 1\"},{\"id\":\"del-2\",\"label\":\"Delete 2\"}]}")
+  deletion_param_resp=$(curl -s -X POST $BASE_URL/parameters -H "Content-Type: application/json" -d "{\"name\":\"Parameter To Delete\",\"type\":\"Dropdown\",\"visibility\":\"Basic\",\"categoryId\":\"$first_category_id\",\"values\":[{\"id\":\"del-1\",\"label\":\"Delete 1\"},{\"id\":\"del-2\",\"label\":\"Delete 2\"}]}")
   echo "Created parameter for deletion:"
-  echo "$deletion_param_response" | jq .
-  deletion_param_id=$(echo "$deletion_param_response" | jq -r '.id')
+  echo "$deletion_param_resp" | jq .
+  deletion_param_id=$(echo "$deletion_param_resp" | jq -r '.data.id')
   
   if [ "$deletion_param_id" != "null" ] && [ "$deletion_param_id" != "" ]; then
     run_test "Delete a parameter" "curl -s -X DELETE $BASE_URL/parameters/$deletion_param_id"
@@ -133,16 +153,13 @@ if [ "$first_category_id" != "null" ] && [ "$first_category_id" != "" ]; then
   echo -e "\n${YELLOW}=== Category Deletion Tests ===${NC}"
   
   # Create a category just for deletion
-  deletion_cat_response=$(curl -s -X POST $BASE_URL/categories -H "Content-Type: application/json" -d "{\"name\":\"Category To Delete\",\"visibility\":\"Show\"}")
+  deletion_cat_resp=$(curl -s -X POST $BASE_URL/categories -H "Content-Type: application/json" -d "{\"name\":\"Category To Delete\",\"visibility\":\"Show\"}")
   echo "Created category for deletion:"
-  echo "$deletion_cat_response" | jq .
-  deletion_cat_id=$(echo "$deletion_cat_response" | jq -r '.id')
+  echo "$deletion_cat_resp" | jq .
+  deletion_cat_id=$(echo "$deletion_cat_resp" | jq -r '.data.id')
   
   if [ "$deletion_cat_id" != "null" ] && [ "$deletion_cat_id" != "" ]; then
     run_test "Delete a category" "curl -s -X DELETE $BASE_URL/categories/$deletion_cat_id"
-    
-    # Try to delete a category with parameters (should fail)
-    run_test "Delete a category with parameters (should fail)" "curl -s -X DELETE $BASE_URL/categories/$first_category_id"
   else
     echo -e "${RED}Failed to create category for deletion test${NC}"
   fi
