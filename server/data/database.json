@@ -2,14 +2,19 @@
   "categories": [
     {
       "id": "cat-1",
-      "name": "Updated Environmental Policy",
+      "name": "Updated Science Fiction",
+      "visibility": "Show"
+    },
+    {
+      "id": "cat-673909ee-e385-4bd5-91f2-82797755019a",
+      "name": "Science Fiction",
       "visibility": "Show"
     }
   ],
   "parameters": [
     {
       "id": "param-1",
-      "name": "Climate Focus",
+      "name": "Updated Parameter Name",
       "type": "Dropdown",
       "visibility": "Basic",
       "categoryId": "cat-1",
@@ -21,6 +26,100 @@
         {
           "id": "val-2",
           "label": "Value 2"
+        }
+      ]
+    },
+    {
+      "id": "param-b84367cd-b8b1-447d-beb3-940fb71c108f",
+      "name": "Technology Level",
+      "type": "Dropdown",
+      "visibility": "Basic",
+      "categoryId": "cat-1",
+      "values": [
+        {
+          "id": "tech-1",
+          "label": "Stone Age"
+        },
+        {
+          "id": "tech-2",
+          "label": "Industrial"
+        },
+        {
+          "id": "tech-3",
+          "label": "Information Age"
+        },
+        {
+          "id": "tech-4",
+          "label": "Space Age"
+        }
+      ]
+    },
+    {
+      "id": "param-f5b87bdf-4934-4115-bf92-03ed411e64eb",
+      "name": "Story Length",
+      "type": "Slider",
+      "visibility": "Basic",
+      "categoryId": "cat-1",
+      "values": {
+        "min": 100,
+        "max": 1000,
+        "step": 100
+      }
+    },
+    {
+      "id": "param-843d5af9-2148-4f64-8b26-6ce19b7350f5",
+      "name": "Happy Ending",
+      "type": "Toggle",
+      "visibility": "Basic",
+      "categoryId": "cat-1",
+      "values": {
+        "on": "Yes",
+        "off": "No"
+      }
+    },
+    {
+      "id": "param-ea2ad992-cfff-4325-b0d6-4d30e5f60005",
+      "name": "Main Character",
+      "type": "Radio",
+      "visibility": "Basic",
+      "categoryId": "cat-1",
+      "values": [
+        {
+          "id": "char-1",
+          "label": "Hero"
+        },
+        {
+          "id": "char-2",
+          "label": "Antihero"
+        },
+        {
+          "id": "char-3",
+          "label": "Villain"
+        }
+      ]
+    },
+    {
+      "id": "param-0f14e8b0-3918-4ab3-9bcd-c43cb7ff192f",
+      "name": "Story Elements",
+      "type": "Checkbox",
+      "visibility": "Basic",
+      "categoryId": "cat-1",
+      "values": [
+        {
+          "id": "elem-1",
+          "label": "Action"
+        },
+        {
+          "id": "elem-2",
+          "label": "Romance"
+        },
+        {
+          "id": "elem-3",
+          "label": "Mystery"
+        },
+        {
+          "id": "elem-4",
+          "label": "Horror"
         }
       ]
     }

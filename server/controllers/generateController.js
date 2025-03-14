@@ -54,22 +54,24 @@ const generateController = {
               });
               formattedValue = selectedLabels.join(', ');
             } else {
-              formattedValue = value;
+              // Handle case where a single value is passed instead of an array
+              const option = parameter.values.find(opt => opt.id === value);
+              formattedValue = option ? option.label : value;
             }
             break;
             
           case 'Slider':
             // Slider value is just a number
-            formattedValue = value;
+            formattedValue = value.toString();
             break;
             
           case 'Toggle':
             // Toggle is a boolean, get the appropriate label
-            formattedValue = value ? parameter.values.on : parameter.values.off;
+            formattedValue = value === true || value === "true" ? parameter.values.on : parameter.values.off;
             break;
             
           default:
-            formattedValue = value;
+            formattedValue = String(value);
         }
         
         // Add to formatted parameters

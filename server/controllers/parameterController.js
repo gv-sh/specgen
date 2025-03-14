@@ -95,21 +95,25 @@ const parameterController = {
         case 'Dropdown':
         case 'Radio':
         case 'Checkbox':
-          if (!values || values.length < 2) {
-            const error = new Error(`${type} parameter requires at least 2 values`);
+          if (!values || !Array.isArray(values) || values.length < 2) {
+            const error = new Error(`${type} parameter requires at least 2 values as an array`);
             error.statusCode = 400;
             return next(error);
           }
           break;
         case 'Slider':
-          if (!values || !values.min || !values.max) {
+          if (!values || typeof values !== 'object' || values.min === undefined || values.max === undefined) {
             const error = new Error('Slider parameter requires min and max values');
             error.statusCode = 400;
             return next(error);
           }
+          // Ensure step has a default value if not provided
+          if (values.step === undefined) {
+            newParameter.values.step = 1;
+          }
           break;
         case 'Toggle':
-          if (!values || !values.on || !values.off) {
+          if (!values || typeof values !== 'object' || !values.on || !values.off) {
             const error = new Error('Toggle parameter requires on and off values');
             error.statusCode = 400;
             return next(error);
@@ -154,28 +158,32 @@ const parameterController = {
       
       // Validate values based on type if type changed or values provided
       const updatedType = type || existingParameter.type;
-      const updatedValues = values || existingParameter.values;
+      const updatedValues = values !== undefined ? values : existingParameter.values;
       
-      if (type !== existingParameter.type || values) {
+      if (type !== existingParameter.type || values !== undefined) {
         switch (updatedType) {
           case 'Dropdown':
           case 'Radio':
           case 'Checkbox':
-            if (!updatedValues || updatedValues.length < 2) {
-              const error = new Error(`${updatedType} parameter requires at least 2 values`);
+            if (!updatedValues || !Array.isArray(updatedValues) || updatedValues.length < 2) {
+              const error = new Error(`${updatedType} parameter requires at least 2 values as an array`);
               error.statusCode = 400;
               return next(error);
             }
             break;
           case 'Slider':
-            if (!updatedValues || !updatedValues.min || !updatedValues.max) {
+            if (!updatedValues || typeof updatedValues !== 'object' || updatedValues.min === undefined || updatedValues.max === undefined) {
               const error = new Error('Slider parameter requires min and max values');
               error.statusCode = 400;
               return next(error);
             }
+            // Ensure step has a default value if not provided
+            if (updatedValues.step === undefined && existingParameter.values.step === undefined) {
+              updatedValues.step = 1;
+            }
             break;
           case 'Toggle':
-            if (!updatedValues || !updatedValues.on || !updatedValues.off) {
+            if (!updatedValues || typeof updatedValues !== 'object' || !updatedValues.on || !updatedValues.off) {
               const error = new Error('Toggle parameter requires on and off values');
               error.statusCode = 400;
               return next(error);
@@ -190,7 +198,7 @@ const parameterController = {
       if (type !== undefined) updates.type = type;
       if (visibility !== undefined) updates.visibility = visibility;
       if (categoryId !== undefined) updates.categoryId = categoryId;
-      if (values !== undefined) updates.values = values;
+      if (values !== undefined) updates.values = updatedValues;
       
       // Save to database
       const updatedParameter = await db.update('parameters', id, updates);
