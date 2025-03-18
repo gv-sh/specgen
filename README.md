@@ -1,6 +1,6 @@
 # SpecGen
 
-SpecGen is a locally-hosted application for generating speculative fiction using AI, consisting of an Express backend API and two independent React frontends (admin and user interfaces).
+SpecGen is a locally-hosted application for generating speculative fiction using AI. The system consists of an Express backend API and two independent React frontends (admin and user interfaces).
 
 ## Project Structure
 
@@ -15,63 +15,31 @@ SpecGen is a locally-hosted application for generating speculative fiction using
 
 The Express backend provides API endpoints for managing categories and parameters, as well as generating fiction through OpenAI integration.
 
+### Prerequisites
+
+- Node.js (version 14+ recommended)
+- npm
+
 ### Setup
 
-1. Install dependencies:
+1. Clone the repository
+2. Navigate to the server directory
+3. Install dependencies:
    ```bash
    cd server
    npm install
    ```
 
-2. Configure environment variables:
+4. Configure environment variables:
    - Create a `.env` file in the `server` directory
    - Add your OpenAI API key: `OPENAI_API_KEY=your_key_here`
-   - Set port if needed: `PORT=3001`
+   - Optionally set the port: `PORT=3001`
 
-3. Initialize the database with sample data:
+5. Start the server:
    ```bash
-   npm run init-db
+   npm run dev  # For development with nodemon
+   npm start    # For production
    ```
-   This will create a database.json file with sample categories and parameters for Science Fiction, Fantasy, and Dystopian Future stories.
-
-4. Start the server:
-   ```bash
-   npm run dev
-   ```
-
-5. Access the API documentation:
-   - Open a browser and go to: `http://localhost:3001/api-docs`
-   - You can test the API endpoints directly from the Swagger UI
-
-### Testing the Generate Endpoint
-
-After initializing the database with sample data, you can test the generate endpoint with a request like:
-
-```json
-{
-  "science-fiction": {
-    "science-fiction-technology-level": "Near Future",
-    "science-fiction-alien-life": true,
-    "science-fiction-space-exploration-focus": 7
-  }
-}
-```
-
-The specific IDs will be printed to the console when you run `npm run init-db`. You can also run:
-
-```bash
-npm run test-generate
-```
-
-to automatically test the generate endpoint with the first category and its parameters.
-
-### ID Generation
-
-In this application, we use name-based IDs instead of random UUIDs:
-
-- Category IDs are derived from their names by converting to lowercase and replacing spaces with hyphens
-- Parameter IDs are derived from their category ID + parameter name using the same transformation
-- This approach ensures that IDs are readable, meaningful, and unique as long as category and parameter names are unique
 
 ### API Endpoints
 
@@ -90,38 +58,19 @@ In this application, we use name-based IDs instead of random UUIDs:
 - `DELETE /api/parameters/:id`: Delete parameter
 
 #### Generation
-- `POST /api/generate`: Send parameters to AI service
+- `POST /api/generate`: Send parameters to AI service to generate fiction
 
 ### Testing
 
-Run tests (in sequence to avoid database corruption):
+Run tests:
 ```bash
 npm test
 ```
 
-## Admin Frontend
+### API Documentation
 
-The Admin interface allows management of categories and parameters.
-
-### Setup
-
-```bash
-cd admin
-npm install
-npm start
-```
-
-## User Frontend
-
-The User interface allows selection of parameters and generation of fiction.
-
-### Setup
-
-```bash
-cd user
-npm install
-npm start
-```
+Access Swagger UI:
+- Open `http://localhost:3001/api-docs` in your browser
 
 ## Data Structure
 
@@ -160,6 +109,22 @@ Categories and parameters are stored in a JSON file with the following structure
 - **Radio Buttons**: 4-7 mutually exclusive options
 - **Checkbox**: 4-7 multi-selectable options
 
+## Technologies
+
+- Backend: Express.js, Node.js
+- Frontend: React
+- AI Integration: OpenAI API
+- Database: JSON file-based storage
+- Testing: Jest, Supertest
+
 ## License
 
 This project is for internal use only.
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request

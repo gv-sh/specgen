@@ -7,7 +7,6 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "jest --forceExit --runInBand",
-    "init-db": "node scripts/initDatabase.js",
     "test-generate": "node scripts/testGenerate.js"
   },
   "keywords": [],
