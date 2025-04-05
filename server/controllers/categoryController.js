@@ -58,7 +58,7 @@ const categoryController = {
    */
   async createCategory(req, res, next) {
     try {
-      const { name, visibility } = req.body;
+      const { name, visibility, description } = req.body;
       
       // Validate input
       if (!name) {
@@ -83,7 +83,8 @@ const categoryController = {
       const newCategory = {
         id: name.replace(/\s+/g, '-').toLowerCase(),
         name,
-        visibility: visibility || 'Show'
+        visibility: visibility || 'Show',
+        description: description || ''
       };
       
       const createdCategory = await databaseService.createCategory(newCategory);
@@ -106,13 +107,13 @@ const categoryController = {
   async updateCategory(req, res, next) {
     try {
       const { id } = req.params;
-      const { name, visibility } = req.body;
+      const { name, visibility, description } = req.body;
       
       // Validate input
-      if (!name && !visibility) {
+      if (!name && !visibility && !description) {
         return res.status(400).json({
           success: false,
-          error: 'At least one field (name or visibility) is required for update'
+          error: 'At least one field (name, visibility, or description) is required for update'
         });
       }
       
@@ -144,6 +145,7 @@ const categoryController = {
       const updateData = {};
       if (name) updateData.name = name;
       if (visibility) updateData.visibility = visibility;
+      if (description !== undefined) updateData.description = description;
       
       const updatedCategory = await databaseService.updateCategory(id, updateData);
       

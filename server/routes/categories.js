@@ -79,6 +79,9 @@ router.get('/:id', categoryController.getCategoryById);
  *               name:
  *                 type: string
  *                 example: "Science Fiction"
+ *               description:
+ *                 type: string
+ *                 example: "Stories set in the future with advanced technology"
  *               visibility:
  *                 type: string
  *                 enum: [Show, Hide]
@@ -124,6 +127,8 @@ router.post('/', categoryController.createCategory);
  *             type: object
  *             properties:
  *               name:
+ *                 type: string
+ *               description:
  *                 type: string
  *               visibility:
  *                 type: string

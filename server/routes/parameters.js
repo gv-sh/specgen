@@ -85,6 +85,9 @@ router.get('/:id', parameterController.getParameterById);
  *               name:
  *                 type: string
  *                 example: "Climate Focus"
+ *               description:
+ *                 type: string
+ *                 example: "Determines the level of focus on climate change in the story"
  *               type:
  *                 type: string
  *                 enum: [Dropdown, Slider, Toggle Switch, Radio Buttons, Checkbox]
@@ -164,6 +167,8 @@ router.post('/', parameterController.createParameter);
  *             type: object
  *             properties:
  *               name:
+ *                 type: string
+ *               description:
  *                 type: string
  *               visibility:
  *                 type: string

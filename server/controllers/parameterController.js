@@ -67,7 +67,7 @@ const parameterController = {
    */
   async createParameter(req, res, next) {
     try {
-      const { name, type, visibility, categoryId, values, config } = req.body;
+      const { name, type, visibility, categoryId, values, config, description } = req.body;
       
       // Validate required fields
       if (!name || !type || !categoryId) {
@@ -144,6 +144,7 @@ const parameterController = {
         type,
         visibility: visibility || 'Basic',
         categoryId,
+        description: description || '',
         values: processedValues || [],
         config: config || {}
       };
@@ -168,7 +169,7 @@ const parameterController = {
   async updateParameter(req, res, next) {
     try {
       const { id } = req.params;
-      const { name, type, visibility, categoryId, values, config } = req.body;
+      const { name, type, visibility, categoryId, values, config, description } = req.body;
       
       // Check if parameter exists
       const existingParameter = await databaseService.getParameterById(id);
@@ -214,33 +215,9 @@ const parameterController = {
       if (type) updateData.type = type;
       if (visibility) updateData.visibility = visibility;
       if (categoryId) updateData.categoryId = categoryId;
-      if (config) updateData.config = { ...existingParameter.config, ...config };
-      
-      // Process values if provided
-      if (values) {
-        // Process values in the same way as for creation
-        let processedValues;
-        if (Array.isArray(values)) {
-          processedValues = values.map(value => {
-            if (typeof value === 'string') {
-              return {
-                id: value.replace(/\s+/g, '-').toLowerCase(),
-                label: value
-              };
-            } else if (value.label && !value.id) {
-              return {
-                id: value.label.replace(/\s+/g, '-').toLowerCase(),
-                label: value.label
-              };
-            }
-            return value;
-          });
-        } else {
-          processedValues = values;
-        }
-        
-        updateData.values = processedValues;
-      }
+      if (description !== undefined) updateData.description = description;
+      if (values) updateData.values = values;
+      if (config) updateData.config = config;
       
       const updatedParameter = await databaseService.updateParameter(id, updateData);
       

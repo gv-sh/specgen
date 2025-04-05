@@ -63,7 +63,8 @@ describe('Category API Tests', () => {
     
     const updatedCategory = {
       name: 'Updated Science Fiction',
-      visibility: 'Show'
+      visibility: 'Show',
+      description: 'Updated description for science fiction category'
     };
 
     const response = await request.put(`/api/categories/${categoryId}`).send(updatedCategory);
@@ -91,7 +92,8 @@ describe('Category API Tests', () => {
     // First create a category specifically for deletion
     const newCategory = {
       name: 'Category To Delete',
-      visibility: 'Show'
+      visibility: 'Show',
+      description: 'A category that will be deleted'
     };
 
     const createResponse = await request.post('/api/categories').send(newCategory);

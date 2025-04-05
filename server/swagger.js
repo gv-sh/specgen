@@ -35,6 +35,11 @@ const options = {
               description: 'Category name',
               example: 'Environmental Policy',
             },
+            description: {
+              type: 'string',
+              description: 'Optional description of the category',
+              example: 'Stories focused on environmental themes and climate change',
+            },
             visibility: {
               type: 'string',
               enum: ['Show', 'Hide'],
@@ -56,6 +61,11 @@ const options = {
               type: 'string',
               description: 'Parameter name',
               example: 'Climate Focus',
+            },
+            description: {
+              type: 'string',
+              description: 'Optional description of the parameter',
+              example: 'Determines the level of focus on climate change in the story',
             },
             type: {
               type: 'string',

@@ -117,6 +117,39 @@ Categories and parameters are stored in a JSON file with the following structure
 - Database: JSON file-based storage
 - Testing: Jest, Supertest
 
+## Sample Frontend Configuration
+
+## Frontend Configuration
+
+### Admin Frontend Configuration
+
+```jsx
+// admin/src/services/api.js
+const API_BASE_URL = 'http://localhost:3001/api';
+
+export const fetchCategories = async () => {
+  const response = await fetch(`${API_BASE_URL}/categories`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch categories');
+  }
+  const data = await response.json();
+  return data.data;
+};
+
+export const fetchParameters = async (categoryId) => {
+  const url = categoryId 
+    ? `${API_BASE_URL}/parameters?categoryId=${categoryId}` 
+    : `${API_BASE_URL}/parameters`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch parameters');
+  }
+  const data = await response.json();
+  return data.data;
+};
+
+// Add other API functions (create, update, delete) for both categories and parameters
+```
 ## License
 
 This project is for internal use only.
@@ -128,3 +161,216 @@ This project is for internal use only.
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
+
+## DigitalOcean Deployment
+
+### Prerequisites
+- A DigitalOcean account
+- A DigitalOcean droplet with Ubuntu 22.04 LTS
+- SSH access to the droplet (using password authentication)
+
+### Deployment Steps
+
+1. SSH into your DigitalOcean droplet:
+   ```bash
+   ssh root@your_droplet_ip
+   ```
+
+2. Update the system and install required dependencies:
+   ```bash
+   apt update && apt upgrade -y
+   apt install -y nodejs npm nginx git
+   ```
+
+3. Clone the repository:
+   ```bash
+   git clone https://github.com/gv-sh/specgen.git
+   cd specgen
+   ```
+
+4. Set up the server:
+   ```bash
+   cd server
+   npm install
+   ```
+
+5. Create and configure the environment file:
+   ```bash
+   # Stop the server if it's running
+   pm2 stop specgen-server
+   
+   # Create and edit the .env file
+   nano .env
+   ```
+   Add the following content (replace with your actual OpenAI API key):
+   ```
+   OPENAI_API_KEY=your_key_here
+   PORT=3001
+   NODE_ENV=production
+   ```
+   
+   # Verify the environment file
+   cat .env
+   
+   # Restart the server with the new environment
+   pm2 restart specgen-server
+   ```
+
+6. Install PM2 for process management:
+   ```bash
+   npm install -g pm2
+   pm2 start npm --name "specgen-server" -- start
+   pm2 startup
+   pm2 save
+   ```
+
+7. Configure Nginx as a reverse proxy:
+   ```bash
+   nano /etc/nginx/sites-available/specgen
+   ```
+   Add the following configuration:
+   ```nginx
+server {
+    listen 80;
+    server_name your_domain_or_ip;
+
+    location /api {
+        proxy_pass http://localhost:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    location / {
+        root /root/specgen/user/build;
+        try_files $uri $uri/ /index.html;
+    }
+}
+   ```
+
+1. Enable the Nginx configuration:
+   ```bash
+   ln -s /etc/nginx/sites-available/specgen /etc/nginx/sites-enabled/
+   nginx -t
+   systemctl restart nginx
+   ```
+
+2. Build and deploy the frontend applications:
+   ```bash
+   # Build admin frontend
+   cd ../admin
+   npm install
+   npm run build
+
+   # Build user frontend
+   cd ../user
+   npm install
+   npm run build
+   ```
+
+### Accessing the API
+
+After deployment, the API will be accessible at:
+```
+http://your_droplet_ip/api
+```
+
+Example API endpoints:
+- List categories: `GET http://your_droplet_ip/api/categories`
+- List parameters: `GET http://your_droplet_ip/api/parameters`
+- Generate fiction: `POST http://your_droplet_ip/api/generate`
+
+You can test the API using curl:
+```bash
+# List categories
+curl http://your_droplet_ip/api/categories
+
+# List parameters
+curl http://your_droplet_ip/api/parameters
+
+# Generate fiction (example)
+curl -X POST http://your_droplet_ip/api/generate \
+  -H "Content-Type: application/json" \
+  -d '{"parameters": {...}}'
+```
+
+Note: Replace `your_droplet_ip` with your actual DigitalOcean droplet IP address or domain name.
+
+### Troubleshooting
+
+If you're getting a 404 Not Found error, follow these steps to diagnose and fix the issue:
+
+1. Check if the Express server is running:
+   ```bash
+   pm2 status
+   pm2 logs specgen-server
+   ```
+
+2. Verify Nginx configuration:
+   ```bash
+   # Check Nginx configuration syntax
+   nginx -t
+   
+   # Check Nginx error logs
+   tail -f /var/log/nginx/error.log
+   
+   # Check Nginx access logs
+   tail -f /var/log/nginx/access.log
+   ```
+
+3. Verify the server is listening on port 3001:
+   ```bash
+   netstat -tulpn | grep 3001
+   ```
+
+4. Test the API directly (bypassing Nginx):
+   ```bash
+   curl http://localhost:3001/api/categories
+   ```
+
+5. Common fixes:
+   - If the server isn't running: `pm2 restart specgen-server`
+   - If Nginx config is incorrect: `systemctl restart nginx`
+   - If port 3001 isn't listening: Check the .env file and server configuration
+   - If files are missing: Verify the build process completed successfully
+
+### Security Considerations
+
+1. Set up a firewall:
+   ```bash
+   ufw allow ssh
+   ufw allow http
+   ufw allow https
+   ufw enable
+   ```
+
+2. Create a non-root user for better security:
+   ```bash
+   adduser specgen
+   usermod -aG sudo specgen
+   ```
+
+3. Set up SSL with Let's Encrypt:
+   ```bash
+   apt install -y certbot python3-certbot-nginx
+   certbot --nginx -d your_domain
+   ```
+
+### Maintenance
+
+- Monitor the application: `pm2 monit`
+- View logs: `pm2 logs specgen-server`
+- Restart the server: `pm2 restart specgen-server`
+- Update the application:
+  ```bash
+  cd /root/specgen
+  git pull
+  cd server
+  npm install
+  pm2 restart specgen-server
+  cd ../user
+  npm install
+  npm run build
+  ```
