@@ -7,7 +7,9 @@ const axios = require('axios');
 class AIService {
   constructor() {
     this.apiKey = process.env.OPENAI_API_KEY;
-    this.baseUrl = 'https://api.openai.com/v1/chat/completions';
+    this.baseUrl = 'https://api.openai.com/v1';
+    this.chatCompletionUrl = `${this.baseUrl}/chat/completions`;
+    this.imageGenerationUrl = `${this.baseUrl}/images/generations`;
     
     if (!this.apiKey) {
       console.warn('WARNING: OPENAI_API_KEY not set in environment variables');
@@ -15,18 +17,43 @@ class AIService {
   }
 
   /**
-   * Generate content based on provided parameters
+   * Generate content based on provided parameters and type (fiction or image)
    * @param {Object} parameters - User-selected parameters for generation
+   * @param {String} type - Type of content to generate ('fiction' or 'image')
    * @returns {Promise<Object>} - Generated content from OpenAI
    */
-  async generateContent(parameters) {
+  async generateContent(parameters, type = 'fiction') {
+    try {
+      // Call appropriate generation method based on type
+      if (type === 'fiction') {
+        return this.generateFiction(parameters);
+      } else if (type === 'image') {
+        return this.generateImage(parameters);
+      } else {
+        throw new Error(`Unsupported generation type: ${type}`);
+      }
+    } catch (error) {
+      console.error(`Error generating ${type}:`, error.response ? error.response.data : error.message);
+      return {
+        success: false,
+        error: error.response ? error.response.data.error.message : error.message
+      };
+    }
+  }
+
+  /**
+   * Generate fiction content based on provided parameters
+   * @param {Object} parameters - User-selected parameters for fiction generation
+   * @returns {Promise<Object>} - Generated fiction content from OpenAI
+   */
+  async generateFiction(parameters) {
     try {
       // Format parameters into a clean markdown prompt
-      const prompt = this.formatPrompt(parameters);
+      const prompt = this.formatFictionPrompt(parameters);
       
       // Call OpenAI API
       const response = await axios.post(
-        this.baseUrl,
+        this.chatCompletionUrl,
         {
           model: "gpt-3.5-turbo",
           messages: [
@@ -58,7 +85,7 @@ class AIService {
         }
       };
     } catch (error) {
-      console.error('Error calling OpenAI API:', error.response ? error.response.data : error.message);
+      console.error('Error calling OpenAI text generation API:', error.response ? error.response.data : error.message);
       return {
         success: false,
         error: error.response ? error.response.data.error.message : error.message
@@ -67,11 +94,58 @@ class AIService {
   }
 
   /**
-   * Format user parameters into a clean markdown prompt for OpenAI
+   * Generate image based on provided parameters
+   * @param {Object} parameters - User-selected parameters for image generation
+   * @returns {Promise<Object>} - Generated image URL from OpenAI
+   */
+  async generateImage(parameters) {
+    try {
+      // Format parameters into a prompt for image generation
+      const prompt = this.formatImagePrompt(parameters);
+      
+      // Call OpenAI API for image generation
+      const response = await axios.post(
+        this.imageGenerationUrl,
+        {
+          model: "dall-e-3",
+          prompt: prompt,
+          n: 1,
+          size: "1024x1024",
+          quality: "standard",
+          response_format: "url"
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.apiKey}`
+          }
+        }
+      );
+      
+      // Extract the generated image URL from response
+      return {
+        success: true,
+        imageUrl: response.data.data[0].url,
+        metadata: {
+          model: "dall-e-3",
+          prompt: prompt
+        }
+      };
+    } catch (error) {
+      console.error('Error calling OpenAI image generation API:', error.response ? error.response.data : error.message);
+      return {
+        success: false,
+        error: error.response ? error.response.data.error.message : error.message
+      };
+    }
+  }
+
+  /**
+   * Format user parameters into a clean markdown prompt for OpenAI text generation
    * @param {Object} parameters - User-selected parameters
    * @returns {String} - Formatted prompt
    */
-  formatPrompt(parameters) {
+  formatFictionPrompt(parameters) {
     // Extract the story length parameter if present
     let storyLength = 1000; // Default length in words
     let storyLengthFound = false;
@@ -117,6 +191,47 @@ class AIService {
     prompt += `The story should be approximately ${storyLength} words in length. `;
     prompt += `Focus on creating an engaging narrative with a clear beginning, middle, and end. `;
     prompt += `Be creative and develop the story elements that best fit these parameters.`;
+    
+    return prompt;
+  }
+
+  /**
+   * Format user parameters into a prompt for DALL-E image generation
+   * @param {Object} parameters - User-selected parameters
+   * @returns {String} - Formatted prompt
+   */
+  formatImagePrompt(parameters) {
+    let prompt = "Create a detailed, visually striking image with the following elements:\n\n";
+    
+    // Collect all parameter values for the image prompt
+    Object.entries(parameters).forEach(([categoryName, categoryParams]) => {
+      prompt += `${categoryName}: `;
+      
+      const paramValues = [];
+      
+      // Add each parameter and its value
+      Object.entries(categoryParams).forEach(([paramName, paramValue]) => {
+        // Handle different parameter types
+        if (Array.isArray(paramValue)) {
+          // For multi-select parameters (checkboxes)
+          paramValues.push(`${paramName}: ${paramValue.join(', ')}`);
+        } else if (typeof paramValue === 'boolean') {
+          // For toggle parameters
+          if (paramValue) {
+            paramValues.push(paramName);
+          }
+        } else {
+          // For other parameter types (dropdown, radio, slider)
+          paramValues.push(`${paramName}: ${paramValue}`);
+        }
+      });
+      
+      prompt += paramValues.join(', ');
+      prompt += '.\n';
+    });
+    
+    // Add additional instructions for high-quality images
+    prompt += "\nUse high-quality, photorealistic rendering with attention to lighting, detail, and composition. The image should be visually cohesive and striking.";
     
     return prompt;
   }

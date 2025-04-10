@@ -14,13 +14,22 @@ const generateController = {
    */
   async generate(req, res, next) {
     try {
-      const parameterSelections = req.body;
+      // Extract data from request body
+      const { parameterValues, categoryIds, generationType = 'fiction' } = req.body;
       
       // Validate input
-      if (!parameterSelections || Object.keys(parameterSelections).length === 0) {
+      if (!parameterValues || Object.keys(parameterValues).length === 0) {
         return res.status(400).json({
           success: false,
           error: 'No parameters provided for generation'
+        });
+      }
+      
+      // Validate generation type
+      if (!['fiction', 'image'].includes(generationType)) {
+        return res.status(400).json({
+          success: false,
+          error: `Invalid generation type: "${generationType}". Valid types are "fiction" and "image".`
         });
       }
       
@@ -39,7 +48,7 @@ const generateController = {
       const formattedParameters = {};
       
       // Process each category of parameters
-      for (const [categoryId, categoryParams] of Object.entries(parameterSelections)) {
+      for (const [categoryId, categoryParams] of Object.entries(parameterValues)) {
         // Find the category by ID
         const category = categoryMap.get(categoryId);
         
@@ -103,19 +112,28 @@ const generateController = {
         }
       }
       
-      // Generate content using AI service
-      const result = await aiService.generateContent(formattedParameters);
+      // Generate content using AI service with specified generation type
+      const result = await aiService.generateContent(formattedParameters, generationType);
       
       if (result.success) {
-        res.status(200).json({
+        // Structure response based on generation type
+        const response = {
           success: true,
-          content: result.content,
           metadata: result.metadata
-        });
+        };
+        
+        // Add the appropriate content field based on generation type
+        if (generationType === 'fiction') {
+          response.content = result.content;
+        } else if (generationType === 'image') {
+          response.imageUrl = result.imageUrl;
+        }
+        
+        res.status(200).json(response);
       } else {
         res.status(500).json({
           success: false,
-          error: result.error || 'Failed to generate content'
+          error: result.error || `Failed to generate ${generationType}`
         });
       }
     } catch (error) {

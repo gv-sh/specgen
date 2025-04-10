@@ -2,8 +2,12 @@
 const fsExtra = require('fs-extra');
 const path = require('path');
 
-// Use absolute path for database file
-const DATABASE_PATH = path.resolve(__dirname, '../data/database.json');
+// Use test database in development mode
+const isDevelopment = process.env.NODE_ENV !== 'production';
+const DATABASE_PATH = path.resolve(
+  __dirname, 
+  `../data/${isDevelopment ? 'test-database.json' : 'database.json'}`
+);
 
 /**
  * Service for handling JSON file database operations
