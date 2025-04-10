@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Box, 
@@ -10,9 +10,7 @@ import {
   Paper,
   Card,
   CardContent,
-  CardMedia,
-  Tabs,
-  Tab
+  CardMedia
 } from '@mui/material';
 import { generateFiction } from '../services/api';
 
@@ -20,10 +18,10 @@ const Generation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Parse parameter values and category IDs from location state
-  const parameterValues = location.state?.parameterValues || {};
-  const categoryIds = location.state?.categoryIds || [];
-  const generationType = location.state?.generationType || 'fiction';
+  // Parse parameter values and category IDs from location state using useMemo
+  const parameterValues = useMemo(() => location.state?.parameterValues || {}, [location.state]);
+  const categoryIds = useMemo(() => location.state?.categoryIds || [], [location.state]);
+  const generationType = useMemo(() => location.state?.generationType || 'fiction', [location.state]);
   
   const [generatedContent, setGeneratedContent] = useState('');
   const [generatedImage, setGeneratedImage] = useState('');
@@ -44,16 +42,29 @@ const Generation = () => {
       // Call the API
       const response = await generateFiction(params, categories, type);
       
+      // Validate response structure
+      if (!response) {
+        throw new Error('Empty response received from server');
+      }
+      
       // Check for success response
-      if (response && response.success === true) {
+      if (response.success === true) {
         if (type === 'fiction') {
-          setGeneratedContent(response.content || '');
+          if (!response.content) {
+            throw new Error('Server returned success but no content was provided');
+          }
+          setGeneratedContent(response.content);
         } else {
-          setGeneratedImage(response.imageUrl || '');
+          if (!response.imageUrl) {
+            throw new Error('Server returned success but no image URL was provided');
+          }
+          setGeneratedImage(response.imageUrl);
         }
         return true;
+      } else if (response.error) {
+        throw new Error(response.error);
       } else {
-        throw new Error(response?.error || 'Server returned an unsuccessful response');
+        throw new Error('Server returned an unsuccessful response');
       }
     } catch (err) {
       // Enhanced error reporting
@@ -89,69 +100,71 @@ const Generation = () => {
       return;
     }
     
-    // Generate content and fallback to sample if needed
-    handleGeneration(parameterValues, categoryIds, generationType).then(success => {
-      if (!success) {
-        if (generationType === 'fiction') {
-          // If fiction generation failed, set sample content
-          setGeneratedContent(
-            "This is a sample story based on a science fiction theme set in the near future.\n\n" +
-            "The year is 2045, and the world has changed dramatically with the advent of widespread neural interfaces. These devices, small enough to be implanted behind the ear, give people the ability to connect directly to the global network with a thought.\n\n" +
-            "Maria Chen, a network security specialist, has been investigating a series of unusual disconnections affecting users in her district. The official explanation from NetCore, the company that maintains the neural interface infrastructure, is routine maintenance and occasional packet loss.\n\n" +
-            "But Maria has noticed a pattern. The disconnections always happen at 3:42 AM local time, regardless of the user's location, and they always last exactly 7 seconds.\n\n" +
-            "Tonight, Maria has set an alarm for 3:30 AM. She sits in her apartment, neural interface active, monitoring her own connection. As the clock ticks toward the designated time, she prepares a suite of diagnostic tools to capture whatever happens.\n\n" +
-            "3:42 AM arrives. Maria feels the momentary disorientation of her neural link severing, but instead of waiting passively, she triggers her offline recording system.\n\n" +
-            "Seven seconds later, when the connection reestablishes, Maria reviews what her system captured. What she discovers sends a chill down her spine. During those seven seconds, a foreign signal had briefly replaced the NetCore stream—something ancient, powerful, and unmistakably non-human in origin.\n\n" +
-            "The signal contained a message that repeated in every known human language:\n\n" +
-            "'Preparation 67% complete. Arrival in 33 days.'"
-          );
-        } else {
-          // If image generation failed, set a placeholder image
-          setGeneratedImage('https://via.placeholder.com/800x600?text=Sample+AI+Generated+Image');
+    // Flag to track if the component is still mounted
+    let isMounted = true;
+    
+    // Generate content using real API
+    const generateWithAPI = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Always attempt to generate with the API
+        const success = await handleGeneration(parameterValues, categoryIds, generationType);
+        
+        // Only update state if component still mounted
+        if (!isMounted) return;
+        
+        if (!success) {
+          setError('There was an error connecting to the AI service. Please try again.');
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(`Error: ${err.message}`);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
         }
       }
-    });
+    };
+    
+    // Call the generation function
+    generateWithAPI();
+    
+    // Cleanup function to prevent memory leaks
+    return () => {
+      isMounted = false;
+    };
   }, [location.state, parameterValues, categoryIds, generationType, navigate]);
 
   // Handle regenerate button click
   const handleRegenerate = () => {
-    // Attempt to regenerate with the API
+    // Show loading state
+    setLoading(true);
+    setError(null);
+    
+    // Attempt to regenerate with the API, no fallback to samples
     handleGeneration(parameterValues, categoryIds, generationType).then(success => {
+      setLoading(false);
       if (!success) {
-        if (generationType === 'fiction') {
-          // If regeneration failed, use a fallback story
-          const sampleStories = [
-            "In the year 2052, the streets of New Tokyo buzzed with the electric hum of personal hover vehicles. Taro Yamada, a neural interface technician, discovered strange anomalies in the city's automated systems...",
-            
-            "The space station Horizon orbited Earth silently, its observation deck offering an unparalleled view of the blue planet below. Commander Ellis stared at the notification blinking on her neural implant: 'Quantum anomaly detected in sector 7...'",
-            
-            "The neural interface felt cold against Maya's temple as she activated it for the first time. The world around her shimmered and expanded, revealing layers of digital information overlaid on physical reality..."
-          ];
-          
-          // Pick a random story
-          const randomStory = sampleStories[Math.floor(Math.random() * sampleStories.length)];
-          setGeneratedContent(randomStory);
-        } else {
-          // If image regeneration failed, use a different placeholder image
-          const placeholderImages = [
-            'https://via.placeholder.com/800x600?text=AI+Generated+Space+Scene',
-            'https://via.placeholder.com/800x600?text=AI+Generated+Fantasy+World',
-            'https://via.placeholder.com/800x600?text=AI+Generated+Futuristic+City'
-          ];
-          
-          // Pick a random placeholder
-          const randomImage = placeholderImages[Math.floor(Math.random() * placeholderImages.length)];
-          setGeneratedImage(randomImage);
-        }
+        setError('Failed to generate content. Please try again or adjust your parameters.');
       }
+    }).catch(err => {
+      setLoading(false);
+      setError(`Error: ${err.message}`);
     });
   };
 
   // Handle back button click
   const handleBack = () => {
+    // Use route state consistently instead of mixing with search params
     navigate('/parameters', { 
-      search: categoryIds.length > 0 ? `?categories=${categoryIds.join(',')}` : '',
-      state: { parameterValues, generationType }
+      state: { 
+        selectedCategories: categoryIds.map(id => ({ id })),
+        parameterValues, 
+        generationType 
+      }
     });
   };
 

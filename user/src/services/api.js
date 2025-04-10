@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+// Use environment variable for API URL with fallback to localhost
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -50,10 +51,27 @@ export const generateFiction = async (parameterValues, categoryIds, generationTy
     console.log(`Sending ${generationType} generation request:`, payload);
     
     const response = await api.post('/generate', payload);
+    
+    // Validate response structure
+    if (!response.data) {
+      throw new Error('Invalid server response: Missing data');
+    }
+    
     return response.data;
   } catch (error) {
     console.error(`Error generating ${generationType}:`, error);
-    throw error;
+    
+    // Create a more helpful error object
+    const enhancedError = {
+      message: 'Failed to generate content',
+      originalError: error.message || 'Unknown error',
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+    };
+    
+    // Rethrow with enhanced info
+    throw enhancedError;
   }
 };
 

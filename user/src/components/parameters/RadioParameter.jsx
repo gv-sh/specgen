@@ -73,12 +73,6 @@ const RadioParameter = ({ parameter, value, onChange, error }) => {
             </Grid>
           </RadioGroup>
           
-          {options.length > 0 && (
-            <Typography variant="body1" sx={{ mt: 2, fontWeight: 'medium' }}>
-              Selected: <strong>{selectedLabel}</strong>
-            </Typography>
-          )}
-          
           {options.length === 0 && (
             <Typography variant="body2" color="error" sx={{ mt: 1 }}>
               No options available

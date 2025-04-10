@@ -73,6 +73,29 @@ const Categories = () => {
     }
   }, [navigate, selectedCategories, categories]);
 
+  // Helper function to get category descriptions
+  const getCategoryDescription = (categoryId) => {
+    // Find the category in our loaded categories
+    const category = categories.find(cat => cat.id === categoryId);
+    
+    // If we have a description from the API, use it
+    if (category && category.description) {
+      return category.description;
+    }
+    
+    // Fallback descriptions for common genres if not in the API
+    switch (categoryId) {
+      case 'science-fiction':
+        return 'Explore futuristic technology, space travel, and scientific advancements';
+      case 'fantasy':
+        return 'Delve into worlds of magic, mythical creatures, and epic adventures';
+      case 'horror':
+        return 'Experience tension, fear, and the supernatural or psychological unknown';
+      default:
+        return 'Create unique stories in this genre';
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -181,20 +204,6 @@ const Categories = () => {
       </Box>
     </Container>
   );
-};
-
-// Helper function to get category descriptions
-const getCategoryDescription = (categoryId) => {
-  switch (categoryId) {
-    case 'science-fiction':
-      return 'Explore futuristic technology, space travel, and scientific advancements';
-    case 'fantasy':
-      return 'Delve into worlds of magic, mythical creatures, and epic adventures';
-    case 'horror':
-      return 'Experience tension, fear, and the supernatural or psychological unknown';
-    default:
-      return 'Create unique stories in this genre';
-  }
 };
 
 export default Categories; 

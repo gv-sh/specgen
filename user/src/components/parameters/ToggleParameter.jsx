@@ -44,10 +44,6 @@ const ToggleParameter = ({ parameter, value, onChange, error }) => {
             }
           />
           
-          <Typography variant="body2" sx={{ mt: 2, fontWeight: 'medium' }}>
-            Status: <strong>{safeValue ? 'Enabled' : 'Disabled'}</strong>
-          </Typography>
-          
           {error && (
             <FormHelperText error sx={{ mt: 1 }}>
               {error}

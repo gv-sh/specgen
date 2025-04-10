@@ -77,25 +77,6 @@ const CheckboxParameter = ({ parameter, value, onChange, error }) => {
             )}
           </FormGroup>
           
-          {selectedLabels.length > 0 && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="body2" sx={{ mb: 1, fontWeight: 'medium' }}>
-                Selected:
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {selectedLabels.map(label => (
-                  <Chip
-                    key={label}
-                    label={label}
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                  />
-                ))}
-              </Box>
-            </Box>
-          )}
-          
           {error && (
             <FormHelperText error sx={{ mt: 1 }}>
               {error}

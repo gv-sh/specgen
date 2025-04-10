@@ -74,10 +74,6 @@ const SliderParameter = ({ parameter, value, onChange, error }) => {
             </Grid>
           </Grid>
           
-          <Typography variant="body1" sx={{ mt: 2, fontWeight: 'medium', textAlign: 'center' }}>
-            Selected value: <strong>{safeValue}</strong>
-          </Typography>
-          
           {error && (
             <FormHelperText error sx={{ mt: 1 }}>
               {error}

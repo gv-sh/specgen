@@ -12,7 +12,9 @@ class AIService {
     this.imageGenerationUrl = `${this.baseUrl}/images/generations`;
     
     if (!this.apiKey) {
-      console.warn('WARNING: OPENAI_API_KEY not set in environment variables');
+      console.error('ERROR: OPENAI_API_KEY not set in environment variables');
+    } else {
+      console.log('OpenAI API Key found, length:', this.apiKey.length);
     }
   }
 
@@ -23,6 +25,8 @@ class AIService {
    * @returns {Promise<Object>} - Generated content from OpenAI
    */
   async generateContent(parameters, type = 'fiction') {
+    console.log(`Generating ${type} with parameters:`, JSON.stringify(parameters, null, 2));
+    
     try {
       // Call appropriate generation method based on type
       if (type === 'fiction') {
@@ -50,12 +54,13 @@ class AIService {
     try {
       // Format parameters into a clean markdown prompt
       const prompt = this.formatFictionPrompt(parameters);
+      console.log('Fiction generation prompt:', prompt);
       
       // Call OpenAI API
       const response = await axios.post(
         this.chatCompletionUrl,
         {
-          model: "gpt-3.5-turbo",
+          model: "gpt-4o-mini",
           messages: [
             {
               role: "system",
@@ -65,7 +70,9 @@ class AIService {
               role: "user",
               content: prompt
             }
-          ]
+          ],
+          temperature: 0.8,
+          max_tokens: 1000
         },
         {
           headers: {
@@ -73,6 +80,12 @@ class AIService {
             'Authorization': `Bearer ${this.apiKey}`
           }
         }
+      );
+      
+      // Log success response
+      console.log('OpenAI response received for fiction:', 
+        response.data?.choices ? 'Success' : 'No choices in response',
+        'Model:', response.data?.model || 'unknown'
       );
       
       // Extract the generated content from response
@@ -85,7 +98,9 @@ class AIService {
         }
       };
     } catch (error) {
-      console.error('Error calling OpenAI text generation API:', error.response ? error.response.data : error.message);
+      console.error('Error calling OpenAI text generation API:', 
+        error.response ? JSON.stringify(error.response.data, null, 2) : error.message
+      );
       return {
         success: false,
         error: error.response ? error.response.data.error.message : error.message
@@ -147,50 +162,33 @@ class AIService {
    */
   formatFictionPrompt(parameters) {
     // Extract the story length parameter if present
-    let storyLength = 1000; // Default length in words
-    let storyLengthFound = false;
+    let storyLength = 500; // Default length in words
     
-    // Look for a story length parameter in any category
-    Object.values(parameters).forEach(categoryParams => {
+    // Start with a simple prompt
+    let prompt = "Write a speculative fiction story with the following elements:\n\n";
+    
+    // Format each parameter in a simple list
+    Object.entries(parameters).forEach(([categoryName, categoryParams]) => {
+      // Add category name
+      prompt += `${categoryName}:\n`;
+      
+      // Add each parameter as a bullet point
       Object.entries(categoryParams).forEach(([paramName, paramValue]) => {
         if (paramName.toLowerCase().includes('length') && typeof paramValue === 'number') {
           storyLength = paramValue;
-          storyLengthFound = true;
-        }
-      });
-    });
-    
-    // Start the prompt
-    let prompt = "# Story Parameters\n\n";
-    
-    // Add each category and its selected parameters to the prompt as a clean markdown list
-    Object.entries(parameters).forEach(([categoryName, categoryParams]) => {
-      prompt += `## ${categoryName}\n\n`;
-      
-      // Add each parameter and its value
-      Object.entries(categoryParams).forEach(([paramName, paramValue]) => {
-        // Handle different parameter types with clean formatting
-        if (Array.isArray(paramValue)) {
-          // For multi-select parameters (checkboxes)
-          prompt += `- **${paramName}**: ${paramValue.join(', ')}\n`;
+        } else if (Array.isArray(paramValue)) {
+          prompt += `- ${paramName}: ${paramValue.join(', ')}\n`;
         } else if (typeof paramValue === 'boolean') {
-          // For toggle parameters
-          prompt += `- **${paramName}**: ${paramValue ? 'Yes' : 'No'}\n`;
+          prompt += `- ${paramName}: ${paramValue ? 'Yes' : 'No'}\n`;
         } else {
-          // For other parameter types (dropdown, radio, slider)
-          prompt += `- **${paramName}**: ${paramValue}\n`;
+          prompt += `- ${paramName}: ${paramValue}\n`;
         }
       });
-      
       prompt += '\n';
     });
     
-    // Add instructions for the story generation
-    prompt += "# Instructions\n\n";
-    prompt += `Please create a compelling and imaginative story that incorporates all the elements above. `;
-    prompt += `The story should be approximately ${storyLength} words in length. `;
-    prompt += `Focus on creating an engaging narrative with a clear beginning, middle, and end. `;
-    prompt += `Be creative and develop the story elements that best fit these parameters.`;
+    // Add length instruction
+    prompt += `The story should be approximately ${storyLength} words long. Make it creative, engaging, and with a clear beginning, middle, and end.`;
     
     return prompt;
   }

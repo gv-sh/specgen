@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Container, Typography, Box, Button, CircularProgress, 
@@ -18,7 +18,12 @@ import {
 const Parameters = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const selectedCategories = location.state?.selectedCategories || [];
+  
+  // Use useMemo to prevent unnecessary re-renders
+  const selectedCategories = useMemo(() => 
+    location.state?.selectedCategories || [], 
+    [location.state]
+  );
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,10 +34,22 @@ const Parameters = () => {
   
   // Redirect if no categories are selected
   useEffect(() => {
-    if (selectedCategories.length === 0) {
-      navigate('/categories');
+    // Check for categories in state
+    if (!selectedCategories || selectedCategories.length === 0) {
+      // If we're returning from the Generation page, we need to handle the state format
+      const stateParameterValues = location.state?.parameterValues;
+      const stateCategories = location.state?.selectedCategories;
+      
+      // If we have parameter values and categories from state, use those
+      if (stateParameterValues && stateCategories && stateCategories.length > 0) {
+        setParameterValues(stateParameterValues);
+        // Don't navigate away
+      } else {
+        // Otherwise, redirect to categories page
+        navigate('/categories');
+      }
     }
-  }, [selectedCategories, navigate]);
+  }, [selectedCategories, navigate, location.state]);
   
   // Fetch parameters for selected categories
   useEffect(() => {
@@ -41,7 +58,7 @@ const Parameters = () => {
       setError(null);
       
       try {
-        const parameterData = {};
+        const newParameterValues = {...parameterValues}; // Clone existing values
         const allParameters = [];
         
         // Fetch parameters for each selected category
@@ -54,40 +71,40 @@ const Parameters = () => {
           if (categoryParameters.length > 0) {
             allParameters.push(...categoryParameters);
             
-            // Initialize parameter values
+            // Initialize parameter values only if they don't already exist
+            if (!newParameterValues[category.id]) {
+              newParameterValues[category.id] = {};
+            }
+            
             categoryParameters.forEach(param => {
-              const categoryParams = parameterValues[category.id] || {};
-              
-              // Set initial values based on parameter type
-              if (!categoryParams[param.id]) {
+              // Only set value if it doesn't already exist
+              if (newParameterValues[category.id][param.id] === undefined) {
                 switch (param.type) {
                   case 'Dropdown':
-                    categoryParams[param.id] = param.values[0]?.id || '';
+                    newParameterValues[category.id][param.id] = param.values[0]?.id || '';
                     break;
                   case 'Radio':
-                    categoryParams[param.id] = param.values[0]?.value || '';
+                    newParameterValues[category.id][param.id] = param.values[0]?.value || '';
                     break;
                   case 'Slider':
-                    categoryParams[param.id] = param.config?.default || param.config?.min || 0;
+                    newParameterValues[category.id][param.id] = param.config?.default || param.config?.min || 0;
                     break;
                   case 'Toggle Switch':
-                    categoryParams[param.id] = false;
+                    newParameterValues[category.id][param.id] = false;
                     break;
                   case 'Checkbox':
-                    categoryParams[param.id] = [];
+                    newParameterValues[category.id][param.id] = [];
                     break;
                   default:
-                    categoryParams[param.id] = '';
+                    newParameterValues[category.id][param.id] = '';
                 }
               }
-              
-              parameterData[category.id] = categoryParams;
             });
           }
         }
         
         setParameters(allParameters);
-        setParameterValues(parameterData);
+        setParameterValues(newParameterValues);
       } catch (err) {
         console.error('Error fetching parameters:', err);
         setError('Failed to load parameters. Please try again.');
@@ -128,50 +145,55 @@ const Parameters = () => {
   
   // Validate parameters before generating
   const validateParameters = () => {
-    // We're suppressing validation errors, so always return true
-    // Just keep track of what errors we would have shown for debugging purposes
-    const debugErrors = {};
+    const newValidationErrors = {};
+    let isValid = true;
     
     parameters.forEach(param => {
       const value = parameterValues[param.categoryId]?.[param.id];
       
-      // Check for potential issues but don't block submission
-      switch (param.type) {
-        case 'Dropdown':
-          if (!value) {
-            debugErrors[param.id] = `Missing value for ${param.name}`;
-          }
-          break;
-        case 'Radio':
-          if (!value) {
-            debugErrors[param.id] = `Missing value for ${param.name}`;
-          }
-          break;
-        case 'Checkbox':
-          if (!Array.isArray(value) || value.length === 0) {
-            debugErrors[param.id] = `No options selected for ${param.name}`;
-          }
-          break;
-        default:
-          break;
+      // Check for required parameters and show validation errors
+      if (param.required === true) {
+        switch (param.type) {
+          case 'Dropdown':
+            if (!value) {
+              newValidationErrors[param.id] = `Please select a value for ${param.name}`;
+              isValid = false;
+            }
+            break;
+          case 'Radio':
+            if (!value) {
+              newValidationErrors[param.id] = `Please select an option for ${param.name}`;
+              isValid = false;
+            }
+            break;
+          case 'Checkbox':
+            if (!Array.isArray(value) || value.length === 0) {
+              newValidationErrors[param.id] = `Please select at least one option for ${param.name}`;
+              isValid = false;
+            }
+            break;
+          default:
+            break;
+        }
       }
     });
     
-    // Log issues for debugging but don't show to user
-    if (Object.keys(debugErrors).length > 0) {
-      console.log('Non-blocking parameter warnings:', debugErrors);
-    }
+    // Update validation errors in state
+    setValidationErrors(newValidationErrors);
     
-    // Clear any existing validation errors in the UI
-    setValidationErrors({});
-    
-    // Always return true to let the user proceed
-    return true;
+    return isValid;
   };
   
   // Handle generation button click
   const handleGenerate = () => {
-    // Skip validation and just proceed with whatever data we have
+    // Validate before proceeding
+    const isValid = validateParameters();
+    
+    // If we have validation errors and they're required fields, don't proceed
+    if (!isValid) {
+      return;
+    }
+    
     // Create a clean parameter values object that excludes null/empty values
     const cleanParameterValues = {};
     

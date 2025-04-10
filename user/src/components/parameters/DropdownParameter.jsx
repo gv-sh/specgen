@@ -71,12 +71,6 @@ const DropdownParameter = ({ parameter, value, onChange, error }) => {
             )}
           </Select>
           
-          {options.length > 0 && (
-            <Typography variant="body2" sx={{ mt: 2, fontWeight: 'medium' }}>
-              Selected: <strong>{selectedLabel}</strong>
-            </Typography>
-          )}
-          
           {error && (
             <FormHelperText error sx={{ mt: 1 }}>
               {error}
