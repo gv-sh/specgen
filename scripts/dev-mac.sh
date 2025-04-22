@@ -15,11 +15,12 @@ echo -e "${GREEN}Installing dependencies...${NC}"
 cd "${PROJECT_ROOT}"
 npm install
 
-# Start all components in a single terminal window
+# Start all components in the current terminal
 echo -e "${GREEN}Starting all components...${NC}"
-osascript -e "tell app \"Terminal\" to do script \"cd '${PROJECT_ROOT}' && npm run dev\""
+cd "${PROJECT_ROOT}"
+npm run dev
 
 echo -e "${BLUE}SpecGen is starting up...${NC}"
-echo -e "Server API: ${GREEN}http://localhost:3000/api${NC}"
-echo -e "Admin Interface: ${GREEN}http://localhost:3000/admin${NC}"
-echo -e "User Interface: ${GREEN}http://localhost:3000${NC}" 
+echo -e "Server API: ${GREEN}http://localhost:3003/api${NC}"
+echo -e "Admin Interface: ${GREEN}http://localhost:3000${NC}"
+echo -e "User Interface: ${GREEN}http://localhost:3002${NC}" 
