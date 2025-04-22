@@ -11,6 +11,14 @@ SpecGen is a locally-hosted application for generating speculative fiction using
 └── user/          # React user interface
 ```
 
+## Port Configuration
+
+The application consists of three main components, each running on a different port:
+
+- **Server API**: Runs on port 3001
+- **Admin Interface**: Runs on port 3000
+- **User Interface**: Runs on port 3002
+
 ## Backend API
 
 The Express backend provides API endpoints for managing categories and parameters, as well as generating fiction through OpenAI integration.
@@ -71,6 +79,46 @@ npm test
 
 Access Swagger UI:
 - Open `http://localhost:3001/api-docs` in your browser
+
+## Frontend Applications
+
+### Admin Interface
+
+The admin interface provides tools for managing categories and parameters.
+
+#### Setup
+
+1. Navigate to the admin directory:
+   ```bash
+   cd admin
+   npm install
+   ```
+
+2. Start the admin interface:
+   ```bash
+   npm start
+   ```
+
+3. Access the admin interface at: http://localhost:3000
+
+### User Interface
+
+The user interface allows users to generate fiction based on selected parameters.
+
+#### Setup
+
+1. Navigate to the user directory:
+   ```bash
+   cd user
+   npm install
+   ```
+
+2. Start the user interface:
+   ```bash
+   npm start
+   ```
+
+3. Access the user interface at: http://localhost:3002
 
 ## Data Structure
 
@@ -150,6 +198,32 @@ export const fetchParameters = async (categoryId) => {
 
 // Add other API functions (create, update, delete) for both categories and parameters
 ```
+
+## Environment Variables
+
+### Server (.env)
+
+```
+PORT=3001
+OPENAI_API_KEY=your_openai_api_key
+NODE_ENV=development
+```
+
+### Admin and User
+
+You can set the API URL using the `REACT_APP_API_URL` environment variable. If not set, it defaults to `http://localhost:3001`.
+
+## Development
+
+For development, you can run all three components simultaneously using separate terminal windows.
+
+## Production
+
+For production, the server can serve both the admin and user interfaces as static files. The server is configured to serve:
+
+- Admin interface at `/admin`
+- User interface at the root path
+
 ## License
 
 This project is for internal use only.
