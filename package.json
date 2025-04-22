@@ -1,0 +1,12 @@
+{
+  "name": "specgen",
+  "version": "1.0.0",
+  "description": "SpecGen - Speculative Fiction Generator",
+  "scripts": {
+    "dev": "concurrently \"cd server && npm run dev\" \"cd admin && npm start\" \"cd user && npm start\"",
+    "install-all": "concurrently \"cd server && npm install\" \"cd admin && npm install\" \"cd user && npm install\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+} 

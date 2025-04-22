@@ -11,27 +11,13 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 echo -e "${BLUE}Setting up SpecGen development environment...${NC}"
 
 # Install dependencies for all components
-echo -e "${GREEN}Installing server dependencies...${NC}"
-cd "${PROJECT_ROOT}/server"
+echo -e "${GREEN}Installing dependencies...${NC}"
+cd "${PROJECT_ROOT}"
 npm install
 
-echo -e "${GREEN}Installing admin dependencies...${NC}"
-cd "${PROJECT_ROOT}/admin"
-npm install
-
-echo -e "${GREEN}Installing user dependencies...${NC}"
-cd "${PROJECT_ROOT}/user"
-npm install
-
-# Start all components in separate terminal windows
-echo -e "${GREEN}Starting server...${NC}"
-osascript -e "tell app \"Terminal\" to do script \"cd '${PROJECT_ROOT}/server' && npm run dev\""
-
-echo -e "${GREEN}Starting admin interface...${NC}"
-osascript -e "tell app \"Terminal\" to do script \"cd '${PROJECT_ROOT}/admin' && npm start\""
-
-echo -e "${GREEN}Starting user interface...${NC}"
-osascript -e "tell app \"Terminal\" to do script \"cd '${PROJECT_ROOT}/user' && npm start\""
+# Start all components in a single terminal window
+echo -e "${GREEN}Starting all components...${NC}"
+osascript -e "tell app \"Terminal\" to do script \"cd '${PROJECT_ROOT}' && npm run dev\""
 
 echo -e "${BLUE}SpecGen is starting up...${NC}"
 echo -e "Server API: ${GREEN}http://localhost:3000/api${NC}"
