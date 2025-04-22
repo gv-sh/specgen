@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import '../styles/Parameters.css';
 import config from '../config';
 
 function Parameters() {
@@ -98,104 +100,121 @@ function Parameters() {
   };
 
   return (
-    <div>
-      <h2>Manage Parameters</h2>
-      
-      {/* Add Parameter Form */}
-      <form onSubmit={handleAddParameter} className="form-group">
-        <h3>Add New Parameter</h3>
-        <div className="form-group">
-          <label>Name:</label>
-          <input
-            type="text"
-            value={newParameter.name}
-            onChange={(e) => setNewParameter({ ...newParameter, name: e.target.value })}
-            required
-          />
+    <div className="parameters-container">
+      <header className="page-header">
+        <h1 className="page-title">Manage Parameters</h1>
+      </header>
+
+      <form className="parameter-form" onSubmit={handleAddParameter}>
+        <h2 className="form-title">Add New Parameter</h2>
+        
+        <div className="form-grid">
+          <div className="form-field">
+            <label className="form-label">Name:</label>
+            <input
+              type="text"
+              className="form-input"
+              value={newParameter.name}
+              onChange={(e) => setNewParameter({ ...newParameter, name: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="form-field">
+            <label className="form-label">Category:</label>
+            <select
+              className="form-select"
+              value={newParameter.categoryId}
+              onChange={(e) => setNewParameter({ ...newParameter, categoryId: e.target.value })}
+              required
+            >
+              <option value="">Select a category</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-field">
+            <label className="form-label">Type:</label>
+            <select
+              className="form-select"
+              value={newParameter.type}
+              onChange={(e) => setNewParameter({ ...newParameter, type: e.target.value })}
+              required
+            >
+              <option value="">Select a type</option>
+              <option value="Dropdown">Dropdown</option>
+              <option value="Slider">Slider</option>
+              <option value="Toggle">Toggle</option>
+            </select>
+          </div>
+
+          <div className="form-field">
+            <label className="form-label">Visibility:</label>
+            <select
+              className="form-select"
+              value={newParameter.visibility}
+              onChange={(e) => setNewParameter({ ...newParameter, visibility: e.target.value })}
+              required
+            >
+              <option value="">Select visibility</option>
+              <option value="Basic">Basic</option>
+              <option value="Advanced">Advanced</option>
+              <option value="Expert">Expert</option>
+            </select>
+          </div>
         </div>
-        <div className="form-group">
-          <label>Description:</label>
+
+        <div className="form-field">
+          <label className="form-label">Description:</label>
           <textarea
+            className="form-input form-textarea"
             value={newParameter.description}
             onChange={(e) => setNewParameter({ ...newParameter, description: e.target.value })}
+            required
           />
         </div>
-        <div className="form-group">
-          <label>Category:</label>
-          <select
-            value={newParameter.categoryId}
-            onChange={(e) => setNewParameter({ ...newParameter, categoryId: e.target.value })}
-            required
-          >
-            <option value="">Select a category</option>
-            {categories.map(category => (
-              <option key={category.id} value={category.id}>{category.name}</option>
-            ))}
-          </select>
-        </div>
-        <div className="form-group">
-          <label>Type:</label>
-          <select
-            value={newParameter.type}
-            onChange={(e) => setNewParameter({ ...newParameter, type: e.target.value })}
-            required
-          >
-            <option value="Dropdown">Dropdown</option>
-            <option value="Slider">Slider</option>
-            <option value="Toggle Switch">Toggle Switch</option>
-            <option value="Radio Buttons">Radio Buttons</option>
-            <option value="Checkbox">Checkbox</option>
-          </select>
-        </div>
-        <div className="form-group">
-          <label>Visibility:</label>
-          <select
-            value={newParameter.visibility}
-            onChange={(e) => setNewParameter({ ...newParameter, visibility: e.target.value })}
-          >
-            <option value="Basic">Basic</option>
-            <option value="Advanced">Advanced</option>
-          </select>
-        </div>
-        {['Dropdown', 'Radio Buttons', 'Checkbox'].includes(newParameter.type) && (
-          <div className="form-group">
-            <label>Values:</label>
-            <div className="values-container">
-              {newParameter.values.map((value, index) => (
-                <div key={index} className="value-item">
-                  <span>{value.label}</span>
-                  <button
-                    type="button"
-                    className="button button-danger"
-                    onClick={() => handleRemoveValue(index)}
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-              <div className="add-value">
-                <input
-                  type="text"
-                  value={newValue}
-                  onChange={(e) => setNewValue(e.target.value)}
-                  placeholder="Add a value"
-                />
-                <button
-                  type="button"
-                  className="button button-primary"
-                  onClick={handleAddValue}
-                >
-                  Add Value
-                </button>
-              </div>
-            </div>
+
+        <div className="values-section">
+          <div className="values-header">
+            <label className="form-label">Values:</label>
           </div>
-        )}
-        <button type="submit" className="button button-primary">Add Parameter</button>
+          <div className="values-container">
+            <input
+              type="text"
+              className="value-input"
+              value={newValue}
+              onChange={(e) => setNewValue(e.target.value)}
+              placeholder="Add a value"
+            />
+            <button
+              type="button"
+              className="button-secondary"
+              onClick={handleAddValue}
+            >
+              <FiPlus /> Add Value
+            </button>
+          </div>
+          {newParameter.values.length > 0 && (
+            <ul className="values-list">
+              {newParameter.values.map((value, index) => (
+                <li key={index}>{value.label}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="action-buttons">
+          <button type="submit" className="button-primary">
+            Add Parameter
+          </button>
+        </div>
       </form>
 
-      {/* Parameters Table */}
-      <table className="data-table">
+      <table className="parameters-table">
         <thead>
           <tr>
             <th>Name</th>
@@ -207,26 +226,30 @@ function Parameters() {
           </tr>
         </thead>
         <tbody>
-          {parameters.map((parameter) => (
-            <tr key={parameter.id}>
-              <td>{parameter.name}</td>
-              <td>{parameter.description}</td>
-              <td>{parameter.type}</td>
-              <td>{categories.find(c => c.id === parameter.categoryId)?.name || parameter.categoryId}</td>
-              <td>{parameter.visibility}</td>
+          {parameters.map((param) => (
+            <tr key={param.id}>
+              <td>{param.name}</td>
+              <td>{param.description}</td>
+              <td>{param.type}</td>
+              <td>{categories.find(c => c.id === param.categoryId)?.name || param.categoryId}</td>
+              <td>{param.visibility}</td>
               <td>
-                <button
-                  className="button button-primary"
-                  onClick={() => setEditingParameter(parameter)}
-                >
-                  Edit
-                </button>
-                <button
-                  className="button button-danger"
-                  onClick={() => handleDeleteParameter(parameter.id)}
-                >
-                  Delete
-                </button>
+                <div className="table-actions">
+                  <button
+                    className="button-secondary"
+                    onClick={() => setEditingParameter(param)}
+                  >
+                    <FiEdit2 />
+                    Edit
+                  </button>
+                  <button
+                    className="button-danger"
+                    onClick={() => handleDeleteParameter(param.id)}
+                  >
+                    <FiTrash2 />
+                    Delete
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
