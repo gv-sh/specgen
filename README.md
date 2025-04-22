@@ -226,7 +226,7 @@ This project is for internal use only.
 
 7. Configure Nginx as a reverse proxy:
    ```bash
-   nano /etc/nginx/sites-available/specgen
+   sudo nano /etc/nginx/sites-available/specgen
    ```
    Add the following configuration:
    ```nginx
@@ -244,7 +244,7 @@ server {
     }
 
     location / {
-        root /root/specgen/user/build;
+        root /var/www/specgen;
         try_files $uri $uri/ /index.html;
     }
 }
@@ -269,6 +269,48 @@ server {
    npm install
    npm run build
    ```
+
+### Deploying the User Frontend
+
+After deploying the server, follow these steps to deploy the user frontend:
+
+1. Navigate to the user frontend directory:
+   ```bash
+   cd /root/specgen/user
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Create a production environment file:
+   ```bash
+   nano .env.production
+   ```
+   Add the following content (replace with your actual server URL):
+   ```
+   REACT_APP_API_URL=http://your_droplet_ip/api
+   ```
+
+4. Build the production version:
+   ```bash
+   npm run build
+   ```
+
+5. Verify the build was successful:
+   ```bash
+   ls -la build/
+   ```
+   You should see the compiled files in the build directory.
+
+6. The Nginx configuration we set up earlier will serve the user frontend from the build directory. If you need to update the frontend in the future, simply rebuild it:
+   ```bash
+   cd /root/specgen/user
+   npm run build
+   ```
+
+7. If you're using a domain name, update your DNS settings to point to your DigitalOcean droplet IP.
 
 ### Accessing the API
 

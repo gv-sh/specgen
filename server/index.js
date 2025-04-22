@@ -18,11 +18,13 @@ app.use(express.urlencoded({ extended: true }));
 const categoryRoutes = require('./routes/categories');
 const parameterRoutes = require('./routes/parameters');
 const generateRoutes = require('./routes/generate');
+const databaseRoutes = require('./routes/database');
 
 // API Routes
 app.use('/api/categories', categoryRoutes);
 app.use('/api/parameters', parameterRoutes);
 app.use('/api/generate', generateRoutes);
+app.use('/api/database', databaseRoutes);
 
 // Only add Swagger in non-test environment
 if (process.env.NODE_ENV !== 'test') {
