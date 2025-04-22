@@ -1,29 +1,23 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import config from '../config';
-import '../styles/Database.css';
-import { 
-  FiDownload, 
-  FiUpload, 
-  FiTrash2, 
-  FiAlertTriangle,
-  FiX,
-  FiCheck,
-  FiDatabase
-} from 'react-icons/fi';
 
 function Database() {
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
-  const [showRestoreWarning, setShowRestoreWarning] = useState(false);
-  const [showResetWarning, setShowResetWarning] = useState(false);
   const fileInputRef = useRef(null);
+  const [alert, setAlert] = useState({ show: false, type: '', message: '' });
+  const [isLoading, setIsLoading] = useState(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+
+  const showAlertMessage = (type, message) => {
+    setAlert({ show: true, type, message });
+    setTimeout(() => setAlert({ show: false, type: '', message: '' }), 5000);
+  };
 
   const handleDownload = async () => {
     try {
-      setMessage('');
-      setError('');
+      setIsLoading(true);
       console.log('Initiating database download...');
       
       const response = await axios.get(`${config.API_URL}/api/database/download`, {
@@ -51,10 +45,12 @@ function Database() {
       link.remove();
       window.URL.revokeObjectURL(url);
       
-      setMessage('Database downloaded successfully');
+      showAlertMessage('success', 'Database downloaded successfully');
     } catch (err) {
       console.error('Download error:', err);
-      setError(err.response?.data?.error || 'Failed to download database');
+      showAlertMessage('danger', err.response?.data?.error || 'Failed to download database');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -62,21 +58,17 @@ function Database() {
     const file = event.target.files[0];
     if (file) {
       setSelectedFile(file);
-      setMessage('');
-      setError('');
     }
   };
 
   const handleRestore = async () => {
     if (!selectedFile) {
-      setError('Please select a file first');
+      showAlertMessage('danger', 'Please select a file first');
       return;
     }
 
     try {
-      setMessage('');
-      setError('');
-      
+      setIsLoading(true);
       const formData = new FormData();
       formData.append('file', selectedFile);
 
@@ -86,166 +78,203 @@ function Database() {
         }
       });
 
-      setMessage('Database restored successfully');
+      showAlertMessage('success', 'Database restored successfully');
       setSelectedFile(null);
-      setShowRestoreWarning(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     } catch (err) {
       console.error('Restore error:', err);
-      setError(err.response?.data?.error || 'Failed to restore database');
+      showAlertMessage('danger', err.response?.data?.error || 'Failed to restore database');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleReset = async () => {
     try {
-      setMessage('');
-      setError('');
-
+      setIsLoading(true);
       await axios.post(`${config.API_URL}/api/database/reset`);
-
-      setMessage('Database reset successfully');
-      setShowResetWarning(false);
+      showAlertMessage('success', 'Database reset successfully');
     } catch (err) {
       console.error('Reset error:', err);
-      setError(err.response?.data?.error || 'Failed to reset database');
+      showAlertMessage('danger', err.response?.data?.error || 'Failed to reset database');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="database-container">
-      <div className="page-header">
-        <FiDatabase className="page-icon" />
-        <h2 className="page-title">Database Management</h2>
-      </div>
-      
-      <div className="database-grid">
-        <div className="database-section">
-          <div className="section-header">
-            <div className="section-title">
-              <h3>Download Database</h3>
-              <FiDownload className="section-icon" />
-            </div>
-            <p className="help-text">Create a backup of your current database configuration.</p>
-          </div>
-          <div className="section-content">
-            <button onClick={handleDownload} className="button-primary">
-              <FiDownload /> Download Database
-            </button>
+    <>
+      {/* Alert Messages */}
+      {alert.show && (
+        <div className={`alert alert-${alert.type} alert-dismissible fade show shadow-sm`} role="alert">
+          {alert.message}
+          <button type="button" className="btn-close" onClick={() => setAlert({ show: false, type: '', message: '' })} aria-label="Close"></button>
+        </div>
+      )}
+
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="d-flex align-items-center mb-4">
+            <div className="mb-0">Database Management</div>
           </div>
         </div>
+      </div>
 
-        <div className="database-section">
-          <div className="section-header">
-            <div className="section-title">
-              <h3>Restore Database</h3>
-              <FiUpload className="section-icon" />
+      <div className="row">
+        <div className="col-12">
+          <div className="card shadow-sm mb-4">
+            <div className="card-header bg-white">
+              <div className="card-title mb-0">Download Database</div>
             </div>
-            <p className="help-text">Restore your database from a previously created backup file.</p>
+            <div className="card-body">
+              <p className="text-muted mb-3">Download a backup of the current database.</p>
+              <button
+                className="btn btn-primary"
+                onClick={handleDownload}
+                disabled={isLoading}
+                aria-label="Download database"
+              >
+                {isLoading ? 'Downloading...' : 'Download Database'}
+              </button>
+            </div>
           </div>
-          <div className="section-content">
-            <div className="file-input-container">
-              <div className="file-input-wrapper">
+
+          <div className="card shadow-sm mb-4">
+            <div className="card-header bg-white">
+              <div className="card-title mb-0">Restore Database</div>
+            </div>
+            <div className="card-body">
+              <p className="text-muted mb-3">Restore the database from a backup file.</p>
+              <div className="mb-3">
                 <input
-                  ref={fileInputRef}
                   type="file"
+                  className="form-control"
                   accept=".json"
                   onChange={handleFileSelect}
-                  id="file-upload"
+                  disabled={isLoading}
+                  aria-label="Select database file"
                 />
-                <label htmlFor="file-upload" className="file-label">
-                  {selectedFile ? selectedFile.name : 'Choose backup file...'}
-                </label>
               </div>
-              <button 
-                onClick={() => setShowRestoreWarning(true)}
-                disabled={!selectedFile}
-                className={`button-secondary ${!selectedFile ? 'disabled' : ''}`}
+              <button
+                className="btn btn-warning"
+                onClick={() => {
+                  setShowRestoreModal(true);
+                }}
+                disabled={!selectedFile || isLoading}
+                aria-label="Restore database"
               >
-                <FiUpload /> Restore
+                {isLoading ? 'Restoring...' : 'Restore Database'}
               </button>
             </div>
           </div>
-        </div>
 
-        <div className="database-section danger-section">
-          <div className="section-header">
-            <div className="section-title">
-              <h3>Reset Database</h3>
-              <FiTrash2 className="section-icon" />
+          <div className="card shadow-sm">
+            <div className="card-header bg-white">
+              <div className="card-title mb-0">Reset Database</div>
             </div>
-            <p className="help-text warning-text">
-              <FiAlertTriangle className="warning-icon" />
-              This action will permanently delete all categories and parameters.
-            </p>
-          </div>
-          <div className="section-content">
-            <button 
-              onClick={() => setShowResetWarning(true)}
-              className="button-danger"
-            >
-              <FiTrash2 /> Reset Database
-            </button>
+            <div className="card-body">
+              <p className="text-muted mb-3">Reset the database to its initial state. This action cannot be undone.</p>
+              <button
+                className="btn btn-danger"
+                onClick={() => {
+                  setShowResetModal(true);
+                }}
+                disabled={isLoading}
+                aria-label="Reset database"
+              >
+                {isLoading ? 'Resetting...' : 'Reset Database'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {(message || error) && (
-        <div className="message-container">
-          {message && (
-            <div className="success-message">
-              <FiCheck className="message-icon" /> {message}
+      {/* Restore Confirmation Modal */}
+      {showRestoreModal && (
+        <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1" aria-labelledby="restoreModalLabel" aria-hidden="true">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content shadow">
+              <div className="modal-header">
+                <div className="modal-title" id="restoreModalLabel">Confirm Restore</div>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowRestoreModal(false)}
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p>Are you sure you want to restore the database from the selected file? This will overwrite all current data.</p>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowRestoreModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-warning"
+                  onClick={() => {
+                    setShowRestoreModal(false);
+                    handleRestore();
+                  }}
+                >
+                  Restore
+                </button>
+              </div>
             </div>
-          )}
-          {error && (
-            <div className="error-message">
-              <FiAlertTriangle className="message-icon" /> {error}
-            </div>
-          )}
+          </div>
+          <div className="modal-backdrop fade show"></div>
         </div>
       )}
 
-      {showRestoreWarning && (
-        <div className="modal">
-          <div className="modal-content">
-            <div className="modal-header">
-              <FiAlertTriangle className="warning-icon" />
-              <h3>Confirm Database Restore</h3>
-            </div>
-            <p>Are you sure you want to restore the database? This will overwrite all existing data.</p>
-            <div className="modal-buttons">
-              <button onClick={() => setShowRestoreWarning(false)} className="button-secondary">
-                <FiX /> Cancel
-              </button>
-              <button onClick={handleRestore} className="button-danger">
-                <FiCheck /> Yes, Restore
-              </button>
+      {/* Reset Confirmation Modal */}
+      {showResetModal && (
+        <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1" aria-labelledby="resetModalLabel" aria-hidden="true">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content shadow">
+              <div className="modal-header">
+                <div className="modal-title" id="resetModalLabel">Confirm Reset</div>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowResetModal(false)}
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p>Are you sure you want to reset the database? This will delete all data and cannot be undone.</p>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowResetModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={() => {
+                    setShowResetModal(false);
+                    handleReset();
+                  }}
+                >
+                  Reset
+                </button>
+              </div>
             </div>
           </div>
+          <div className="modal-backdrop fade show"></div>
         </div>
       )}
-
-      {showResetWarning && (
-        <div className="modal">
-          <div className="modal-content">
-            <div className="modal-header">
-              <FiAlertTriangle className="warning-icon" />
-              <h3>Confirm Database Reset</h3>
-            </div>
-            <p>Are you sure you want to reset the database? This will delete all categories and parameters.</p>
-            <div className="modal-buttons">
-              <button onClick={() => setShowResetWarning(false)} className="button-secondary">
-                <FiX /> Cancel
-              </button>
-              <button onClick={handleReset} className="button-danger">
-                <FiCheck /> Yes, Reset
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </>
   );
 }
 
